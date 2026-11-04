@@ -5,11 +5,14 @@ import {
   Trash2, CheckCircle2, Sparkles
 } from 'lucide-react';
 
-const CDRAGON_TFT_JSON = 'https://raw.communitydragon.org/latest/cdragon/tft/en_us.json';
+const CDRAGON_BASE = 'https://raw.communitydragon.org/latest/cdragon/tft';
+const CDRAGON_TFT_EN = `${CDRAGON_BASE}/en_us.json`;
+const CDRAGON_TFT_VI = `${CDRAGON_BASE}/vi_vn.json`; // bản tiếng Việt -> khớp tên VN
+const SET_NO = 18;
 
 function resolveCDragonAssetUrl(texPath) {
   if (!texPath) return '';
-  const cleaned = texPath.toLowerCase().replace(/\.tex$/, '.png').replace(/^assets\//, 'assets/');
+  const cleaned = texPath.toLowerCase().replace(/\.(tex|dds)$/, '.png');
   return `https://raw.communitydragon.org/latest/game/${cleaned}`;
 }
 const normAugName = (str) =>
@@ -19,40 +22,50 @@ const normAugName = (str) =>
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd')
     .replace(/[^a-z0-9]/g, '');
+const stripSetPrefix = (api) => (api || '').replace(/^TFT\d*_/i, '').toLowerCase();
 
-let augmentIndexPromise = null;
-function loadAugmentIndex() {
-  if (augmentIndexPromise) return augmentIndexPromise;
-  augmentIndexPromise = fetch(CDRAGON_TFT_JSON)
-    .then((r) => r.json())
-    .then((data) => {
-      const byName = {};
-      const byApi = {};
-      const list = Array.isArray(data?.items) ? data.items : [];
-      list.forEach((it) => {
-        const api = it?.apiName || '';
-        const icon = it?.icon || '';
-        const isAug = /augment/i.test(api) || /\/augments?\//i.test(icon);
-       if (!isAug || !icon || /missing-t\d/i.test(icon)) return;
-        const url = resolveCDragonAssetUrl(icon);
-        byApi[api.toLowerCase()] = url;
-        const n = normAugName(it.name);
-        if (n && !byName[n]) byName[n] = url;
-      });
-      return { byName, byApi };
-    })
-    .catch(() => {
-      augmentIndexPromise = null;
-      return { byName: {}, byApi: {} };
-    });
-  return augmentIndexPromise;
+function indexCDragon(data, out) {
+  if (!data) return;
+  (Array.isArray(data.items) ? data.items : []).forEach((it) => {
+    const api = it?.apiName || '';
+    const icon = it?.icon || '';
+    const isAug = /augment/i.test(api) || /\/augments?\//i.test(icon);
+    if (!isAug || !icon || /missing-t\d/i.test(icon)) return;
+    const url = resolveCDragonAssetUrl(icon);
+    out.aug.byApi[api.toLowerCase()] = url;
+    const n = normAugName(it.name);
+    if (n && !out.aug.byName[n]) out.aug.byName[n] = url;
+  });
+  const set = data.sets?.[String(SET_NO)] || (Array.isArray(data.setData) ? data.setData.find((x) => x.number === SET_NO) : null);
+  (set?.champions || []).forEach((c) => {
+    const icon = c.squareIcon || c.tileIcon || c.icon;
+    const k = stripSetPrefix(c.apiName);
+    if (icon && k && !out.champ[k]) out.champ[k] = { iconUrl: resolveCDragonAssetUrl(icon), cost: c.cost };
+  });
+  (set?.traits || []).forEach((t) => {
+    const k = normAugName(t.name);
+    if (t.icon && k && !out.trait[k]) out.trait[k] = { iconUrl: resolveCDragonAssetUrl(t.icon) };
+  });
+}
+
+let cdragonPromise = null;
+function loadCDragon() {
+  if (cdragonPromise) return cdragonPromise;
+  const get = (u) => fetch(u).then((r) => r.json()).catch(() => null);
+  cdragonPromise = Promise.all([get(CDRAGON_TFT_VI), get(CDRAGON_TFT_EN)]).then(([vi, en]) => {
+    const out = { aug: { byName: {}, byApi: {} }, champ: {}, trait: {} };
+    indexCDragon(vi, out); // VN trước để tên Việt được ưu tiên
+    indexCDragon(en, out);
+    return out;
+  });
+  return cdragonPromise;
 }
 
 function useAugmentIndex() {
   const [index, setIndex] = useState(null);
   useEffect(() => {
     let alive = true;
-    loadAugmentIndex().then((i) => alive && setIndex(i));
+    loadCDragon().then((o) => alive && setIndex(o.aug));
     return () => { alive = false; };
   }, []);
   return index;
@@ -69,83 +82,98 @@ const slugMetaTFT = (name) =>
     .replace(/^-+|-+$/g, '');
 
 function metaTFTCandidates(aug) {
+  const list = [];
+  if (aug.metaIcon) list.push(aug.metaIcon); // URL thật scrape từ metatft.gg/augments
   const slug = slugMetaTFT(aug.name);
-  if (!slug) return [];
-  return ['2026/08', '2026/09', '2026/10', '2026/07', '2026/11'].map(
-    (m) => `https://metatft.gg/wp-content/uploads/${m}/${slug}.png`
-  );
+  if (slug) {
+    ['2026/08', '2026/09', '2026/10', '2026/07', '2026/11'].forEach((m) =>
+      list.push(`https://metatft.gg/wp-content/uploads/${m}/${slug}.png`)
+    );
+  }
+  return list;
 }
 
 function pickAugmentIcon(aug, index) {
   if (aug.iconOverride) return aug.iconOverride;
-  if (!index) return '';
-  if (aug.apiName && index.byApi[aug.apiName.toLowerCase()]) return index.byApi[aug.apiName.toLowerCase()];
-
-  const keys = [aug.en, aug.name].filter(Boolean).map(normAugName);
-  for (const k of keys) if (index.byName[k]) return index.byName[k];
-
-  if (aug.en) {
-    const k = normAugName(aug.en);
-    const hit = Object.keys(index.byName).find(
-      (n) => n.length >= 6 && (n.startsWith(k) || k.startsWith(n))
-    );
-    if (hit) return index.byName[hit];
+  if (!index || /\+$/.test(aug.name || '')) return '';
+  const api = (aug.apiName || '').toLowerCase();
+  if (api && index.byApi[api]) return index.byApi[api];
+  for (const k of [aug.en, aug.name].filter(Boolean).map(normAugName)) {
+    if (index.byName[k]) return index.byName[k];
   }
-
-  // khớp theo apiName, ví dụ covencrown, vanguardcrest
-  const idKey = normAugName((aug.id || '').replace(/_\d+$/, ''));
-  const enKey = normAugName(aug.en || '');
-  const apiKey = Object.keys(index.byApi).find((a) => {
-    const n = normAugName(a);
-    return (idKey && n.includes(idKey)) || (enKey && n.includes(enKey));
-  });
-  return apiKey ? index.byApi[apiKey] : '';
+  return ''; // CDragon không có -> AugmentBadge sẽ rơi xuống metaTFTCandidates()
 }
 
-const CHAMPIONS_HEX_ROSTER = [
-  { key: 'Morgana', name: 'Morgana', cost: 4, hexCode: '04' },
-  { key: 'Shen', name: 'Shen', cost: 2, hexCode: '08' },
-  { key: 'Alune', name: 'Alune', cost: 5, hexCode: '0C' },
-  { key: 'Ornn', name: 'Ornn', cost: 4, hexCode: '10' },
-  { key: 'Taric', name: 'Taric', cost: 5, hexCode: '14' },
-  { key: 'Cassiopeia', name: 'Cassiopeia', cost: 2, hexCode: '18' },
-  { key: 'Diana', name: 'Diana', cost: 3, hexCode: '1C' },
-  { key: 'Elise', name: 'Elise', cost: 1, hexCode: '20' },
-  { key: 'Teemo', name: 'Teemo', cost: 2, hexCode: '24' },
-  { key: 'Alistar', name: 'Alistar', cost: 2, hexCode: '28' },
-  { key: 'Leblanc', name: 'LeBlanc', cost: 2, hexCode: '2C' },
-  { key: 'Hecarim', name: 'Hecarim', cost: 3, hexCode: '30' },
-  { key: 'Maokai', name: 'Maokai', cost: 1, hexCode: '34' },
-  { key: 'Veigar', name: 'Veigar', cost: 3, hexCode: '38' },
-  { key: 'Ahri', name: 'Ahri', cost: 4, hexCode: '3C' },
-  { key: 'Ivern', name: 'Ivern', cost: 5, hexCode: '40' },
-  { key: 'Lillia', name: 'Lillia', cost: 4, hexCode: '44' },
-  { key: 'Rakan', name: 'Rakan', cost: 2, hexCode: '48' },
-  { key: 'Xayah', name: 'Xayah', cost: 5, hexCode: '4C' },
-  { key: 'Gnar', name: 'Gnar', cost: 5, hexCode: '50' },
-  { key: 'Neeko', name: 'Neeko', cost: 2, hexCode: '54' },
-  { key: 'Azir', name: 'Azir', cost: 3, hexCode: '58' },
-  { key: 'Zyra', name: 'Zyra', cost: 5, hexCode: '5C' },
-  { key: 'Soraka', name: 'Soraka', cost: 3, hexCode: '60' },
-  { key: 'Nidalee', name: 'Nidalee', cost: 4, hexCode: '64' },
-  { key: 'Aphelios', name: 'Aphelios', cost: 4, hexCode: '68' },
-  { key: 'Amumu', name: 'Amumu', cost: 3, hexCode: '6C' },
-  { key: 'Vi', name: 'Vi', cost: 2, hexCode: '70' },
-  { key: 'Varus', name: 'Varus', cost: 2, hexCode: '74' },
-  { key: 'Sentinel', name: 'Sentinel', cost: 4, hexCode: '78' },
-  { key: 'ElderDragon', name: 'Elder Dragon', cost: 5, hexCode: '7C' },
-  { key: 'Brambleback', name: 'Brambleback', cost: 4, hexCode: '80' },
-  { key: 'Krug', name: 'Krug', cost: 2, hexCode: '84' },
-  { key: 'Murkwolf', name: 'Murkwolf', cost: 2, hexCode: '88' },
-  { key: 'Pebbles', name: 'Pebbles', cost: 1, hexCode: '8C' },
-  { key: 'Kobuko', name: 'Kobuko', cost: 2, hexCode: '90' },
-  { key: 'Fiddlesticks', name: 'Fiddlesticks', cost: 3, hexCode: '94' },
-  { key: 'Rammus', name: 'Rammus', cost: 3, hexCode: '98' },
-  { key: 'KogMaw', name: "Kog'Maw", cost: 3, hexCode: '9C' }
+const MT_UP = 'https://metatft.gg/wp-content/uploads/';
+const OPGG_IMG = 'https://c-tft-api.op.gg/img/set/18/tft-champion/tiles/';
+const OPGG_NAME = { NguoiDa: 'AncientSentinel', ElderDragon: 'TheElderDragon', Brambleback: 'Brambleback', Krug: 'Krug', Pebbles: 'Pebbles', Murkwolf: 'Murkwolf', CuaKyCuc: 'Scuttlecrab', CocThanhTinh: 'Gromp', MamNon: 'Cinderling', ChimMe: 'Raptor' };
+const OPGG_TRAIT = { Blackthorn: 'OldGod', Thornmaiden: 'ZyraOrigin' };
+// [key, tên hiển thị (VN nếu có), giá, tộc/hệ, kiểu ảnh a|b|c|đường dẫn, tên file nếu khác key]
+const CHAMP_SPEC = [
+  ['Tristana','Tristana',3,'Tiên Linh,Tinh Nghịch,Thợ Săn','a'],['Ivern','Ivern',5,'Thụ Thần','a'],
+  ['Alune','Alune',5,'Hòa Hợp,Mặt Trăng,Thuật Sư','a'],['Zyra','Zyra',4,'Vườn Gai,Triệu Hồi','a'],
+  ['Soraka','Soraka',4,'Thực Vật,Đao Phủ','a'],['Sivir','Sivir',4,'Nguyên Sinh,Thợ Săn','a'],
+  ['Malphite','Malphite',4,'Gai Đen,Cự Thạch','a'],['Lillia','Lillia',4,'Tiên Linh,Vệ Quân','a'],
+  ['Amumu','Amumu',4,'Hỏa Ngục,Dũng Sĩ','a'],['Rengar','Rengar',3,'Khắc Tinh','a'],
+  ['Krug','Quái Đá Krug',3,'Quái Rừng,Đấu Sĩ','a'],['KhaZix',"Kha'Zix",3,'Khắc Tinh','a'],
+  ['Hecarim','Hecarim',3,'Thần Rừng,Tiên Phong','a'],['Cassiopeia','Cassiopeia',3,'Tiên Hắc Ám,Thuật Sư','a'],
+  ['Kayle','Kayle',2,'Mặt Trời,Liên Kích','c'],['Elise','Elise',2,'Tiên Hắc Ám,Tiên Phong','c'],
+  ['Alistar','Alistar',2,'Thần Rừng,Đấu Sĩ','c'],['Varus','Varus',1,'Hỏa Ngục,Liên Kích','b'],
+  ['Rakan','Rakan',1,'Tiên Linh,Dũng Sĩ,Tiên Phong','b'],['Kobuko','Kobuko',1,'Tinh Nghịch,Đấu Sĩ','b'],
+  ['MamNon','Mầm Non',1,'Quái Rừng,Thợ Săn','2026/07/Mam-non-_tft_set_18.jpg'],
+  ['Camille','Camille',1,'Tiên Hắc Ám,Tàn Phá','b'],['Morgana','Morgana',4,'Tiên Hắc Ám,Thuật Sĩ','a'],
+  ['MasterYi','Master Yi',3,'Hoa Linh,Thích Ứng','a'],['Rammus','Rammus',3,'Tinh Nghịch,Vệ Quân','a'],
+  ['Karma','Karma',1,'Hoa Linh,Thuật Sư','b'],['Xayah','Xayah',1,'Thần Rừng,Tiên Linh,Liên Kích','b'],
+  ['Maokai','Maokai',5,'Cổ Thụ,Dũng Sĩ','a'],['Gnar','Gnar',5,'Thần Rừng,Tinh Nghịch,Đấu Sĩ','a'],
+  ['Akali','Akali',1,'Thích Ứng,Hỏa Ngục,Tàn Phá','b'],['Ezreal','Ezreal',4,'Thần Rừng,Đao Phủ','a'],
+  ['LuxMatTroi','Lux (Mặt Trời)',5,'Thế Thần,Mặt Trời','2026/08/Lux-Mat-Troi-tft-18.avif'],
+  ['LuxNguyenSinh','Lux (Nguyên Sinh)',5,'Thế Thần,Nguyên Sinh','2026/08/Lux-Nguyen-Sinh-tft-18.avif'],
+  ['LuxMatTrang','Lux (Mặt Trăng)',5,'Thế Thần,Mặt Trăng','2026/08/Lux-Mat-Trang.avif'],
+  ['LuxHoaNguc','Lux (Hỏa Ngục)',5,'Thế Thần,Hỏa Ngục','2026/08/Lux-Hoa-Nguc.avif'],
+  ['LuxTienLinh','Lux (Tiên Linh)',5,'Thế Thần,Tiên Linh','2026/08/Lux-Tien-Linh-tft-18.avif'],
+  ['LuxThanRung','Lux (Thần Rừng)',5,'Thế Thần,Thần Rừng','2026/08/Lux-Than-Rung-tft-18.avif'],
+  ['LuxTienHacAm','Lux (Tiên Hắc Ám)',5,'Thế Thần,Tiên Hắc Ám','2026/08/Lux-Tien-Hac-Am-tft-18.avif'],
+  ['LuxHoaLinh','Lux (Hoa Linh)',5,'Thế Thần,Hoa Linh','2026/08/Lux-Hoa-Linh-tft-18.avif'],
+  ['LuxGaiDen','Lux (Gai Đen)',5,'Thế Thần,Gai Đen','2026/08/Lux-Gai-Den-tft-18.avif'],
+  ['ElderDragon','Rồng Ngàn Tuổi',5,'Bá Chủ,Quái Rừng','2025/12/rong_ngan_tuoi_tft_set_18.jpg'],
+  ['NguoiDa','Người Đá',4,'Quái Rừng,Tiên Phong,Thuật Sĩ','2025/12/nguoi_da_tft_set_18.jpg'],
+  ['Brambleback','Bụi Gai Đỏ',4,'Quái Rừng,Tàn Phá','2025/12/bui_gai_do_tft_set_18.jpg'],
+  ['ChimMe','Chim Mẹ',3,'Quái Rừng,Triệu Hồi,Liên Kích','2025/12/chim_me_tft_set_18.jpg'],
+  ['Murkwolf','Sói Hắc Ám',2,'Quái Rừng,Tàn Phá','2026/07/soi_hac_am_tft_set_18.jpg'],
+  ['CocThanhTinh','Cóc Thành Tinh',2,'Quái Rừng,Thích Ứng','2026/07/coc_thanh_tinh_tft_set_18.jpg'],
+  ['CuaKyCuc','Cua Kỳ Cục',2,'Quái Rừng,Dũng Sĩ','2026/07/cua_ky_cuc_tft_set_18.jpg'],
+  ['Pebbles','Sỏi',1,'Quái Rừng,Thuật Sĩ','2026/07/soi__tft_set_18.webp'],
+  ['Ornn','Ornn',1,'Thần Rừng,Vệ Quân','b'],['Azir','Azir',3,'Gai Đen,Đao Phủ,Triệu Hồi','a'],
+  ['Fiddlesticks','Fiddlesticks',3,'Thực Vật,Vệ Quân,Thuật Sư','a'],['Sett','Sett',4,'Hoa Linh,Đấu Sĩ','a'],
+  ['Taric','Taric',5,'Lục Bảo,Tiên Phong','a'],['Lux','Lux',5,'Thế Thần','a'],
+  ['Veigar','Veigar',1,'Gai Đen,Tinh Nghịch,Thuật Sư','b'],['Warwick','Warwick',2,'Gai Đen,Tàn Phá','c'],
+  ['Nidalee','Nidalee',4,'Nguyên Sinh,Thích Ứng','a'],['Diana','Diana',3,'Mặt Trăng,Tàn Phá,Tiên Phong','a'],
+  ['Vi','Vi',3,'Nguyên Sinh,Dũng Sĩ','a'],['Yunara','Yunara',2,'Hoa Linh,Đao Phủ','c'],
+  ['Draven','Draven',5,'Săn Thưởng','a'],['Leona','Leona',1,'Mặt Trời,Vệ Quân','b'],
+  ['Ahri','Ahri',4,'Hoa Linh,Thuật Sư','a'],['Sejuani','Sejuani',2,'Mặt Trời,Dũng Sĩ','c'],
+  ['Kennen','Kennen',5,'Hỏa Ngục,Đao Phủ','2025/12/Kennen_tft_set_18-1.jpg'],
+  ['Leblanc','LeBlanc',2,'Thần Rừng,Thuật Sư','c','LeBlanc'],['Teemo','Teemo',2,'Tinh Nghịch,Thuật Sĩ','c'],
+  ['Aphelios','Aphelios',4,'Mặt Trăng,Liên Kích','a'],['Ashe','Ashe',5,'Hoa Linh,Thợ Săn','a'],
+  ['RekSai',"Rek'Sai",1,'Gai Đen,Đấu Sĩ','b'],['Yorick','Yorick',1,'Hoa Linh,Dũng Sĩ,Triệu Hồi','b'],
+  ['Caitlyn','Caitlyn',2,'Tiên Hắc Ám,Thợ Săn','c'],['Shen','Shen',2,'Hỏa Ngục,Vệ Quân','c'],
+  ['KogMaw',"Kog'Maw",3,'Ăn Mòn,Thích Ứng,Thuật Sĩ','a']
 ];
+const CHAMPIONS_HEX_ROSTER = CHAMP_SPEC.map(([key, name, cost, traits, code, base], i) => {
+  const b = base || key;
+  const path = code === 'a' ? `2025/12/${b}_tft_set_18.jpg`
+    : code === 'b' ? `2026/07/${b}__tft_set_18.jpg`
+    : code === 'c' ? `2026/07/${b}_tft_set_18.jpg` : code;
+  // LƯU Ý: hexCode chỉ là số thứ tự nội bộ, chưa đối chiếu với mã Team Planner thật của game
+  return { key, name, cost, traits: traits.split(','), img: MT_UP + path, opgg: OPGG_IMG + (OPGG_NAME[key] ? OPGG_NAME[key] + '.jpg' : `tft18_${key.toLowerCase()}.tft_set18.jpg`), hexCode: (i + 1).toString(16).toUpperCase().padStart(2, '0') };
+});
 
 const CHAMP_BY_KEY = new Map(CHAMPIONS_HEX_ROSTER.map(c => [c.key.toLowerCase(), c]));
 const CHAMP_BY_HEX = new Map(CHAMPIONS_HEX_ROSTER.map(c => [c.hexCode, c]));
+// Sentinel (Blue Sentinel / bùa xanh, op.gg: AncientSentinel / DA_Sentinel18) = Người Đá trên MetaTFT (4 vàng, Quái Rừng/Tiên Phong/Thuật Sĩ). KHÔNG phải Malphite (Gai Đen/Cự Thạch).
+const LEGACY_CHAMP = { sentinel: 'nguoida', bluesentinel: 'nguoida', ancientsentinel: 'nguoida', buaxanh: 'nguoida', dasentinel18: 'nguoida' };
+const lookupChamp = (k) => CHAMP_BY_KEY.get(LEGACY_CHAMP[k] || k);
+const champName = (k) => lookupChamp(String(k || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase())?.name || k;
+const TRAIT_VI = { 'Apex Predator': 'Bá Chủ', 'Emerald Aspect': 'Lục Bảo', Riftbeast: 'Quái Rừng', Brawler: 'Đấu Sĩ', Invoker: 'Thuật Sĩ', Ravager: 'Tàn Phá', Vanguard: 'Tiên Phong', Greenfather: 'Thụ Thần', 'Old Growth': 'Cổ Thụ', 'Bounty Seeker': 'Săn Thưởng', Executioner: 'Đao Phủ', Inferno: 'Hỏa Ngục', Juggernaut: 'Dũng Sĩ', Elderwood: 'Thần Rừng', Solar: 'Mặt Trời', Summoner: 'Triệu Hồi', Spellweaver: 'Thuật Sư', Blossom: 'Hoa Linh', Sprykin: 'Tinh Nghịch', Attuned: 'Hòa Hợp', 'Flora Fatalis': 'Thực Vật', Lunar: 'Mặt Trăng', Defender: 'Vệ Quân', Fae: 'Tiên Linh', Thornmaiden: 'Vườn Gai', Blackthorn: 'Gai Đen', Coven: 'Tiên Hắc Ám', Rapidfire: 'Liên Kích', Rival: 'Khắc Tinh', Caustic: 'Ăn Mòn', Adaptor: 'Thích Ứng', Primal: 'Nguyên Sinh', Hunter: 'Thợ Săn', Monolith: 'Cự Thạch', Eclipse: 'Thiên Thực' };
 
 function encodeTeamPlannerCode(units, setTag = 'TFTSet18') {
   const slots = [];
@@ -153,7 +181,7 @@ function encodeTeamPlannerCode(units, setTag = 'TFTSet18') {
     const u = units[i];
     if (u) {
       const cleanKey = (u.key || u.name || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      const found = CHAMP_BY_KEY.get(cleanKey);
+      const found = lookupChamp(cleanKey);
       slots.push(found ? found.hexCode : '04');
     } else {
       slots.push('00');
@@ -191,7 +219,7 @@ const AUGMENTS_CATALOG = {
   vanguard_crest: { id: 'vanguard_crest', name: 'Huy Hiệu Hộ Vệ', tier: 'Gold', avgPlace: 3.78, desc: 'Nhận 1 Ấn Hộ Vệ và 1 tướng Hộ Vệ.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/trait_crest_generic.tft_set11.png' },
   coven_crown: { id: 'coven_crown', name: 'Vương Miện Tiên Hắc Ám', tier: 'Prismatic', avgPlace: 3.62, desc: 'Nhận 1 Ấn Tiên Hắc Ám và 1 Morgana.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/trait_crown_generic.tft_set11.png' },
   invoker_crest: { id: 'invoker_crest', name: 'Huy Hiệu Thuật Sĩ', tier: 'Gold', avgPlace: 3.84, desc: 'Nhận 1 Ấn Thuật Sĩ.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/trait_crest_generic.tft_set11.png' },
-  riftbeast_crown: { id: 'riftbeast_crown', name: 'Vương Miện Quái Vật', tier: 'Prismatic', avgPlace: 3.55, desc: 'Nhận 1 Ấn Riftbeast và 1 Krug.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/trait_crown_generic.tft_set11.png' },
+  riftbeast_crown: { id: 'riftbeast_crown', name: 'Vương Miện Quái Vật', tier: 'Prismatic', avgPlace: 3.55, desc: 'Nhận 1 Ấn Quái Rừng và 1 Quái Đá Krug.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/trait_crown_generic.tft_set11.png' },
   lunar_crest: { id: 'lunar_crest', name: 'Huy Hiệu Nguyệt Tộc', tier: 'Gold', avgPlace: 3.89, desc: 'Nhận 1 Ấn Nguyệt Tộc.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/trait_crest_generic.tft_set11.png' },
   jeweled_lotus_2: { id: 'jeweled_lotus_2', name: 'Khảm Bảo Thạch II', tier: 'Gold', avgPlace: 3.85, desc: 'Kỹ năng chí mạng và +20% Tỉ lệ Chí mạng.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/jeweledlotus2.png' },
   jeweled_lotus_3: { id: 'jeweled_lotus_3', name: 'Khảm Bảo Thạch III', tier: 'Prismatic', avgPlace: 3.68, desc: 'Kỹ năng chí mạng và +45% Tỉ lệ Chí mạng.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/jeweledlotus3.png' },
@@ -228,331 +256,143 @@ const AUGMENT_EN_NAMES = {
 Object.keys(AUGMENTS_CATALOG).forEach((k) => {
   AUGMENTS_CATALOG[k].en = AUGMENT_EN_NAMES[k];
 });
-AUGMENTS_CATALOG.vanguard_crest.apiName = 'TFT14_Augment_VanguardCrest';
-const ITEMS_CATALOG = {
-  bluebuff: { id: 'bluebuff', name: 'Blue Buff', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_BlueBuff.png' },
-  jeweled: { id: 'jeweled', name: 'Jeweled Gauntlet', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_JeweledGauntlet.png' },
-  morello: { id: 'morello', name: 'Morellonomicon', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Morellonomicon.png' },
-  warmog: { id: 'warmog', name: "Warmog's Armor", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_WarmogsArmor.png' },
-  bramble: { id: 'bramble', name: 'Bramble Vest', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_BrambleVest.png' },
-  dclaw: { id: 'dclaw', name: "Dragon's Claw", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_DragonsClaw.png' },
-  gargoyle: { id: 'gargoyle', name: 'Gargoyle Stoneplate', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_GargoyleStoneplate.png' },
-  shojin: { id: 'shojin', name: 'Spear of Shojin', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_SpearOfShojin.png' },
-  archangel: { id: 'archangel', name: "Archangel's Staff", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_ArchangelsStaff.png' },
-  nashor: { id: 'nashor', name: "Nashor's Tooth", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Leviathan.png' },
-  guinsoo: { id: 'guinsoo', name: "Guinsoo's Rageblade", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_GuinsoosRageblade.png' },
-  ie: { id: 'ie', name: 'Infinity Edge', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_InfinityEdge.png' },
-  lw: { id: 'lw', name: 'Last Whisper', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_LastWhisper.png' },
-  bt: { id: 'bt', name: 'Bloodthirster', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Bloodthirster.png' },
-  titans: { id: 'titans', name: "Titan's Resolve", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_TitansResolve.png' },
-  hoj: { id: 'hoj', name: 'Hand of Justice', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_UnstableConcoction.png' },
-  guardbreaker: { id: 'guardbreaker', name: 'Guardbreaker', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_PowerGauntlet.png' },
-  redemption: { id: 'redemption', name: 'Redemption', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Redemption.png' },
-  gunblade: { id: 'gunblade', name: 'Hextech Gunblade', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_HextechGunblade.png' },
-  ionic: { id: 'ionic', name: 'Ionic Spark', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_IonicSpark.png' },
-  crownguard: { id: 'crownguard', name: 'Crownguard', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Crownguard.png' },
-  sterak: { id: 'sterak', name: "Sterak's Gage", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_SteraksGage.png' },
-  deathblade: { id: 'deathblade', name: 'Deathblade', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Deathblade.png' },
-  runaan: { id: 'runaan', name: "Runaan's Hurricane", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_RunaansHurricane.png' },
-  qss: { id: 'qss', name: 'Quicksilver', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Quicksilver.png' }
+const MT = 'https://metatft.gg/wp-content/uploads/2026/08/';
+const METATFT_AUGMENT_SYNC = {
+  jeweled_lotus_2: { name: 'Khảm Bảo Thạch II', file: 'Kham-Bao-Thach-II.png', desc: 'Đội của bạn nhận 25% Tỉ Lệ Chí Mạng, 10% Sát Thương Chí Mạng và Chuẩn Xác.' },
+  healing_orbs_2: { name: 'Cầu Hồi Phục II', file: 'Cau-Hoi-Phuc-II.png', desc: 'Khi 1 kẻ địch bị hạ gục, 1 đồng minh gần đó sẽ được hồi 575 Máu.' },
+  level_up: { name: 'Thăng Cấp!', file: 'Thang-Cap.png', desc: 'Khi bạn mua XP, nhận thêm 2 XP. Ngay lập tức nhận 6 XP.' },
+  prismatic_ticket: { name: 'Vé Kim Cương', file: 'Ve-Kim-Cuong.png', desc: 'Mỗi khi cửa hàng được đổi lại, bạn có 45% tỉ lệ nhận thêm 1 lượt đổi miễn phí.' },
+  trade_sector: { name: 'Khu Giao Dịch', file: 'Khu-Giao-Dich.png', desc: 'Nhận 1 lượt đổi miễn phí mỗi vòng đấu. Nhận 2 vàng.' },
+  patient_study: { name: 'Kiên Nhẫn Học Tập', file: 'Kien-Nhan-Hoc-Tap.png', desc: 'Sau giao tranh người chơi, nhận thêm 2 XP nếu thắng hoặc 3 XP nếu thua.' },
+  pandoras_items: { name: 'Hộp Pandora I', file: 'Hop-Pandora-I.png', desc: 'Bắt đầu vòng đấu: trang bị trên hàng dự bị bị đánh tráo ngẫu nhiên. Nhận 1 trang bị thành phần ngẫu nhiên.' },
+  component_buffet: { name: 'Đại Tiệc Trang Bị', file: 'Dai-Tiec-Trang-Bi.png', desc: 'Mỗi trang bị thành phần nhận được biến thành gói trang bị (4 lựa chọn). Nhận 1 trang bị thành phần ngẫu nhiên.' }
+};
+Object.entries(METATFT_AUGMENT_SYNC).forEach(([k, v]) => {
+  const a = AUGMENTS_CATALOG[k];
+  if (!a) return;
+  a.name = v.name; a.desc = v.desc; a.metaIcon = MT + v.file;
+});
+
+const AUG_FILE_OVERRIDE = {
+  'Chế Tạo Bằng Hữu': '2026/10/Che-Tao-Bang-Huu-e1792556707714.webp', 'Kiếm Tử Thần': '2026/10/Kiem-Tu-Than-tft-loi.png',
+  'Kỳ Vọng Bất Ngờ': '2026/10/Ky-Vong-Bat-Ngo.png', 'Là Ta Đây': 'La-Ta-Day-1.png',
+  'Sự Lựa Chọn của Mặt Trời': '2026/10/Su-Lua-Chon-cua-Mat-Troi.png', 'U.R.F': 'U.R.F.png',
+  'Đầu Tư+': 'Dau-Tu.png', 'Đầu Tư++': 'Dau-Tu-1.png', 'Dư Âm Ma Thuật': 'Du-Am-Ma-Thuat.png',
+  'Dư Âm Ma Thuật +': 'Du-Am-Ma-Thuat-.png', 'Dư Âm Ma Thuật ++': 'Du-Am-Ma-Thuat-1-1.png'
+};
+const AUGMENT_NAMES_VI = `Ân Huệ Thách Đấu;Ăn Mòn;Ăn Trộm;Arcane Viktor-y;Bài Học Sơ Khai;Bán Thăng Hoa;Băng Trộm;Băng Trộm II;Băng Trộm II+;Băng Trộm II++;Bảo Hộ Vô Tận;Báo Oán;Bão Vàng;Bừa Bộn;Bùng Cháy;Búp Bê Xây Tổ;Cắm Rễ Phân Tán;Cắm Rễ Phân Tán+;Cảm Thấy May Mắn;Cặp Đôi Hoàn Cảnh;Cầu Hồi Phục I;Cấy Ghép Siêu Công Nghệ;Cây Tộc/Hệ;Cây Tộc/Hệ+;Chế Tạo Bằng Hữu;Chế Tạo Tại Chỗ;Chỉ Một Con Đường;Chỉ Một Con Đường I;Chỉ Một Con Đường II;Chỉ Một Con Đường III;Chiến Thuật Đầu Tư I;Chiến Thuật Đầu Tư II;Chiết Xuất Trang Bị;Chờ Đợi Xứng Đáng;Chờ Đợi Xứng Đáng II;Chúc Phúc Của Bụt;Chuyện Đời Thường;Cố Gắng Lật Kèo;Cơn Khát Vàng;Cơn Khát Vàng+;Cộng Mệt Nghỉ!;Củng Cố Tuyến Trước;Cung Dự Phòng;Cuộc Viễn Chinh;Đặc Quyền Phú Gia;Đam Mê Đai Lưng;Đam Mê Gậy;Đam Mê Kiếm;Đầu Tư+;Đầu Tư++;Đẩy Nhanh Tiến Độ;Định Hướng Tương Lai;Đo Ni Đóng Giày;Đo Ni Đóng Giày+;Đồ Vương;Đội Hình Tối Ưu;Đòn Quyết Định;Động Cơ Tăng Tốc;Đồng Minh Của Bụt;Dòng Tiền Mờ Ám;Dư Âm Ma Thuật;Dư Âm Ma Thuật +;Dư Âm Ma Thuật ++;Được Cái Này Mất Cái Kia I;Đường Ra Trận;Ép Bốn;Gian Lận;Giáp Tự Chế I;Giáp Tự Chế II;Giọt Lệ Bi Ai;Giữ Vững Hàng Ngũ;Gói Đăng Ký Hạng Sang;Gói Tăng Cường;Gói Tăng Cường+;Gói Tăng Cường++;Gói Trang Bị Bất Ngờ;Gói Trang Bị Bất Ngờ+;Hạ Đo Ván;Hạ Đo Ván+;Hàng Chờ Đấu Đôi;Hàng Chờ Pandora;Hang Ổ Baron;Hào Quang Nhân Vật Chính;Hình Nhân Hóa;Hộp Pandora II;Hộp Pandora III;Huấn Luyện Cận Vệ;Hướng Đến Hồi Kết;Kề Vai Sát Cánh;Kết Nối Gián Đoạn;Khảm Bảo Thạch I;Khéo Tay Hay Làm;Khiên Đơn Đấu;Kho Báu Chôn Giấu III;Kho Báu Sắt;Kho Thần Tích;Khóa Dự Phòng;Khởi Động Nhanh;Không Đối Thủ;Khu Giao Dịch+;Kiếm Tử Thần;Kiên Nhẫn Là Một Đức Tính;Kim Long;Kỷ Nguyên;Kỷ Nguyên+;Kỳ Vọng Bất Ngờ;Là Ta Đây;Lấy Công Bù Thủ I;Lấy Công Bù Thủ II;Lệ Lưu Ly;Lên Ngôi Vương;Linh Hoạt;Linh Hồn Chuộc Tội;Linh Thú Vào Bếp;Lò Rèn Thần Thoại;Lò Rèn Tiềm Ẩn;Lông Xù Bé Nhỏ;Lựa Chọn Độc Quyền;Ma Thuật Đan Kết;Mặt Trời và Mặt Trăng;Mặt Trời và Mặt Trăng+;Mở Lối;Món Quà Ngọt Ngào;Một Bùa, Hai Bùa;Một, Hai, Ba;Một, Hai, Năm!;Mũ Tử Thần;Nâng Tầm Uy Lực;Người Bạn Vàng;Nhà Máy Tái Chế;Nhà Máy Tái Chế+;NHẮM MẮT CHƠI BỪA;Nhận 21 Vàng;Nhân Bản;Nhất Thống;Nhiệm Vụ Trang Bị;Nồi Nấu Ăn;Ôm Tập Thể I;Ôm Tập Thể II;Phân Nhánh;Phân Nhánh+;Phân Phối Tướng;Phân Phối Tướng+;Phân Phối Tướng++;Phình Đại;Phước Lành Vũ Trụ I;Phước Lành Vũ Trụ II;Phước Lành Vũ Trụ III;Quà Sinh Nhật;Quá Tải Tư Duy;Quà Tặng Thêm;Quà Tặng Thêm+;Quái Rừng Omega;Quái Thú Bên Trong;Quái Thú Bên Trong+;Quân Đoàn 3 Sao;Quang Lân Tiểu Yêu;Quay Trúng Thưởng;Quỹ Phòng Hộ;Rồng Đẻ Trứng Vàng;Sinh Nhật Đoàn Tụ;Sơ Đồ Tuyến Sau;Song Sát Tốc Hành;Song Vệ;Sống Vội;Sự Lựa Chọn của Mặt Trời;Tà Thuật;Tăng Trưởng Bùng Nổ;Tăng Trưởng Bùng Nổ+;Tăng Vốn I;Tăng Vốn II;Tập Chịu Đòn;Tập Trung Hỏa Lực;Tất Tay Bậc Đồng I;Tất Tay Bậc Đồng II;Thăng Hoa;Thăng Tiến Cuối Trận;Thệ Ước Bảo Hộ;Thép Mạ Vàng;Thích Mở Rộng;Thiên Nhiên Che Chở;Thợ Rèn Gậy;Thợ Rèn Kiếm;Thông Thoáng;Thứ Hạng Tộc Hệ;Thua Có Tính Toán;Thức Tỉnh Linh Hồn;Thực Vật Hấp Thụ;Thuế Nhận Thức;Thuế Nhận Thức+;Thương Vụ Khó Xơi;Tích Chuỗi Nhanh;Tiền Vệ Trung Tâm;Tiếng Gọi Hoa Nở;Tiếp Tế Trang Bị I;Tín Đồ Mua Sắm;Tín Đồ Tiên Hắc Ám;Tinh Linh Hoàn Tiền;Tinh Linh Hoàn Tiền+;Tinh Thông Mọi Tộc;Tinh Túy Kim Long;To Lớn & Mạnh Mẽ;Tòa Tháp;Tối Đa Hóa;Tôi Luyện Sức Mạnh;Tôi Thăng Cấp Một Mình;Trái Tim Sắt Đá;Trẻ, Khỏe & Tự Do;Trí Tuệ Siêu Công Nghệ;Triệu Gọi Hỗn Mang;Trung Tâm Thương Mại;Trượng Đại Thiên Sứ;Tụ Điện I;Tụ Điện II;Tự Lập Đội;Túi Đồ Cỡ Đại;Túi Đồ Cỡ Nhỏ;Túi Đồ Siêu Hùng;Túi Đồ Siêu Hùng+;Túi Đồ Siêu Hùng++;Túi Đồ Urf;U.R.F;Ván Cược Hoàng Kim;Ván Cược Hoàng Kim+;Ván Cược Hoàng Kim++;Vận Mệnh Bạc;Vận Mệnh Bạc+;Vận Mệnh Bạc++;Vận Mệnh Kim Cương;Vận Mệnh Kim Cương+;Vận Mệnh Vàng;Vận Mệnh Vàng+;Vay Tạm Ứng;Vay Tạm Ứng+;Vương Miện Hắc Hóa;Vượt Thời Gian;Xây Dựng Đội Hình;Xoay Bài Tự Động;Xúc Xắc Hoành Tráng;Xúc Xắc Ma Pháp;Xúc Xắc Vô Tận;Xứng Đáng Chờ Đợi`.split(';');
+{
+  const have = new Set(Object.values(AUGMENTS_CATALOG).map((a) => a.name));
+  AUGMENT_NAMES_VI.forEach((name) => {
+    if (have.has(name)) return;
+    const plus = (name.match(/\++$/) || [''])[0].length;
+    const f = AUG_FILE_OVERRIDE[name] || (slugMetaTFT(name.replace(/[+\s]+$/, '')) + (plus ? `-${plus}` : '') + '.png');
+    const id = `aug_${normAugName(name)}${plus ? `_p${plus}` : ''}`;
+    AUGMENTS_CATALOG[id] = { id, name, tier: '', desc: '', metaIcon: MT_UP + (f.includes('/') ? f : '2026/08/' + f) };
+  });
+}
+const ITEM_SPEC = [
+  // Trang bị thường (2026/01, .avif)
+  'Áo Choàng Bóng Tối|Ao-Choang-Bong-Toi.avif','Áo Choàng Gai|Ao-Choang-Gai.avif','Áo Choàng Lửa|Ao-Choang-Lua.avif',
+  'Áo Choàng Thủy Ngân|Ao-Choang-Thuy-Ngan.avif','Bàn Tay Công Lý|Ban-Tay-Cong-Ly.avif','Bùa Đỏ|Bua-Do.avif',
+  'Bùa Xanh|Bua-Xanh.avif','Chùy Đoản Côn|Chuy-Doan-Con.avif','Cung Xanh|Cung-Xanh.avif',
+  'Cuồng Đao Guinsoo|Cuong-Dao-Guinsoo.avif','Diệt Khổng Lồ|Diet-Khong-Lo.avif','Găng Bảo Thạch|Gang-Bao-Thach.avif',
+  'Găng Đạo Tặc|Gang-Dao-Tac.avif','Giáp Máu Warmog|Giap-Mau-Warmog.avif','Giáp Tâm Linh|Giap-Tam-Linh.avif',
+  'Giáp Vai Nguyệt Thần|Giap-Vai-Nguyet-Than.avif','Huyết Kiếm|Huyet-Kiem.avif','Kiếm Súng Hextech|Kiem-Sung-Hextech.avif',
+  'Kiếm Tử Thần|Kiem-Tu-Than.avif','Lời Thề Hộ Vệ|Loi-The-Ho-Ve.avif','Móng Vuốt Sterak|Mong-Vuot-Sterak.avif',
+  'Mũ Phù Thủy Rabadon|Mu-Phu-Thuy-Rabadon.avif','Mũ Thích Nghi|Mu-Thich-Nghi.avif','Nanh Nashor|Nanh-Nashor.avif',
+  'Ngọn Giáo Shojin|Ngon-Giao-Shojin.avif','Nỏ Sét|No-Set.avif','Quỷ Thư Morello|Quy-Thu-Morello.avif',
+  'Quyền Năng Khổng Lồ|Quyen-Nang-Khong-Lo.avif','Quyền Trượng Thiên Thần|Quyen-Truong-Thien-Than.avif',
+  'Thịnh Nộ Thủy Quái|Thinh-No-Thuy-Quai.avif','Thú Tượng Thạch Giáp|Thu-Tuong-Thach-Giap.avif',
+  'Trái Tim Kiên Định|Trai-Tim-Kien-Dinh.avif','Trượng Hư Vô|Truong-Hu-Vo.avif','Vô Cực Kiếm|Vo-Cuc-Kiem.avif',
+  'Vương Miện Hoàng Gia|Vuong-Mien-Hoang-Gia.avif','Vuốt Rồng|Vuot-Rong.avif',
+  // Trang bị Ấn (2026/08)
+  'Ấn Đao Phủ|2026/08/An-Dao-Phu-tft-18-1.jpg','Ấn Đấu Sĩ|2026/08/An-Dau-Si-tft-18-1.jpg','Ấn Dũng Sĩ|2026/08/An-Dung-Si-tft-18.jpg',
+  'Ấn Gai Đen|2026/08/An-Gai-Den-tft-18-1.jpg','Ấn Hoa Linh|2026/08/An-Hoa-Linh-tft-18.jpg','Ấn Hỏa Ngục|2026/08/An-Hoa-Nguc-tft-18-1.jpg',
+  'Ấn Liên Kích|2026/08/An-Lien-Kich-tft-18-1.jpg','Ấn Mặt Trăng|2026/08/An-Mat-Trang-tft-18.jpg','Ấn Nguyên Sinh|2026/08/An-Nguyen-Sinh-tft-18-1.jpg',
+  'Ấn Tàn Phá|2026/08/An-Tan-Pha-tft-18-1.jpg','Ấn Thần Rừng|2026/08/An-Than-Rung-tft-18-1.jpg','Ấn Thợ Săn|2026/08/An-Tho-San-tft-18.jpg',
+  'Ấn Thuật Sĩ|2026/08/An-Thuat-Si-tft-18-1.jpg','Ấn Thuật Sư|2026/08/An-Thuat-Su-tft-18-1.jpg','Ấn Thực Vật|2026/08/An-Thuc-Vat-tft-18.jpg',
+  'Ấn Tiên Hắc Ám|2026/08/An-Tien-Hac-Am-tft-18.jpg','Ấn Tiên Linh|2026/08/An-Tien-Linh-tft-18.jpg','Ấn Tiên Phong|2026/08/An-Tien-Phong-tft-18-1.jpg',
+  'Ấn Tinh Nghịch|2026/08/An-Tinh-Nghich-tft-18.jpg','Ấn Vệ Quân|2026/08/An-Ve-Quan-tft-18.jpg',
+  // Trang bị Tạo Tác
+  'Bão Tố Luden|Bao-To-Luden.avif','Bất Khuất|Bat-Khuat.avif','Bùa Thăng Hoa|Bua-Thang-Hoa.avif','Chùy Bạch Ngân|Chuy-Bach-Ngan.avif',
+  'Đá Hắc Hóa|Da-Hac-Hoa.avif','Đại Bác Hải Tặc|Dai-Bac-Hai-Tac.avif','Đại Bác Liên Thanh|Dai-Bac-Lien-Thanh.avif','Đao Chớp|Dao-Chop.avif',
+  'Dao Điện Statikk|Dao-Dien-Statikk.avif','Đao Tím|Dao-Tim.avif','Dị Vật Tai Ương|2026/09/di-vat-tai-uong-tft.jpg','Găng Đấu Sĩ|Gang-Dau-Si.avif',
+  'Găng Hư Không|Gang-Hu-Khong.avif','Giáp Đại Hãn|Giap-Dai-Han.avif','Giáp Tay Seeker|Giap-Tay-Seeker.avif',
+  'Huy Hiệu Thánh Khiên|2026/08/Huy-Hieu-Thanh-Khien.avif','Khế Ước Vĩnh Hằng|Khe-Uoc-Vinh-Hang.avif','Khiên Hoàng Hôn|Khien-Hoang-Hon.avif',
+  'Khiên Hừng Đông|Khien-Hung-Dong.avif','Kiếm Của Tay Bạc|Kiem-cua-Tay-Bac.avif','Kiếm Tai Ương|Kiem-Tai-Uong.avif',
+  'Kính Nhắm Ma Pháp|Kinh-Nham-Ma-Phap.avif','Lõi Bình Minh|Loi-Binh-Minh.avif','Lưỡng Cực Zhonya|Luong-Cuc-Zhonya.avif','Pháo Xương Cá|Phao-Xuong-Ca.avif',
+  'Rìu Đại Mãng Xà|Riu-Dai-Mang-Xa.avif','Rìu Hỏa Ngục|Riu-Hoa-Nguc.avif','Tam Luyện Kiếm|Tam-Luyen-Kiem.avif','Thánh Kiếm Manazane|Thanh-Kiem-Manazane.avif'
+];
+const ITEMS_CATALOG = {};
+ITEM_SPEC.forEach((row) => {
+  const [name, f] = row.split('|');
+  const id = normAugName(name);
+  ITEMS_CATALOG[id] = { id, name, icon: MT_UP + (f.includes('/') ? f : '2026/01/' + f) };
+});
+// id cũ trong dữ liệu đội hình -> trang bị Mùa 18 (vài mục là suy đoán, xem ghi chú)
+const ITEM_ALIAS = {
+  bluebuff: 'buaxanh', redbuff: 'buado', jeweled: 'gangbaothach', morello: 'quythumorello', warmog: 'giapmauwarmog',
+  gargoyle: 'thutuongthachgiap', spirit: 'giaptamlinh', crownguard: 'vuongmienhoanggia', protector: 'loithehove',
+  steadfast: 'traitimkiendinh', sunfire: 'aochoanglua', dclaw: 'vuotrong', eon: 'aochoangbongtoi', guinsoo: 'cuongdaoguinsoo',
+  hoj: 'bantaycongly', ie: 'vocuckiem', lw: 'cungxanh', flail: 'chuydoancon', gs: 'dietkhonglo', kraken: 'thinhnothuyquai',
+  deathblade: 'kiemtuthan', bt: 'huyetkiem', titans: 'quyennangkhonglo', sterak: 'mongvuotsterak', shojin: 'ngongiaoshojin',
+  rabadon: 'muphuthuyrabadon', void: 'truonghuvo', archangel: 'quyentruongthienthan', nashor: 'nanhnashor',
+  gunblade: 'kiemsunghextech', adaptive: 'muthichnghi', thief: 'gangdactac', qss: 'aochoangthuyngan',
+  ionic: 'giapvainguyetthan', emblunar: 'anmattrang', embexec: 'andaophu', embbrawler: 'andausi', bramble: 'aochoanggai'
 };
 
-const FALLBACK_SET18_COMPS = [
-  {
-    id: 'vanguard-morgana', tier: 'S', name: 'Vanguard Morgana', playstyle: 'Fast 9', difficulty: 'Easy', avgPlace: 4.03, pickRate: 0.18, winRate: 22.1, top4Rate: 57.1, setTag: 'TFTSet18',
-    earlyUnits: ['Elise', 'Cassiopeia', 'Diana', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) → Lv9 (5-2)', carousel: 'Nước Mắt > Gậy Quá Khổ > Đai Khổng Lồ',
-    augments: ['coven_crown', 'jeweled_lotus_2', 'vanguard_crest', 'level_up'],
-    traits: [
-      { name: 'Vanguard', count: 4, style: 'silver' }, { name: 'Coven', count: 3, style: 'bronze' }, { name: 'Invoker', count: 3, style: 'bronze' },
-      { name: 'Lunar', count: 2, style: 'bronze' }, { name: 'Riftbeast', count: 2, style: 'bronze' }, { name: 'Apex Predator', count: 1, style: 'gold' }
-    ],
-    units: [
-      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 0, items: ['bluebuff', 'jeweled', 'morello'] },
-      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'archangel', 'jeweled'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'ElderDragon', name: 'Elder Dragon', cost: 5, star: 2, row: 1, col: 3, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Cassiopeia', name: 'Cassiopeia', cost: 2, star: 2, row: 3, col: 1, items: [] },
-      { key: 'Diana', name: 'Diana', cost: 3, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Elise', name: 'Elise', cost: 1, star: 2, row: 0, col: 1, items: [] }
-    ]
-  },
-  {
-    id: 'invoker-teemo-alistar', tier: 'S', name: 'Invoker Teemo Alistar', playstyle: 'lvl 6', difficulty: 'Easy', avgPlace: 4.16, pickRate: 0.20, winRate: 7.3, top4Rate: 58.8, setTag: 'TFTSet18',
-    earlyUnits: ['Teemo', 'Alistar', 'Kobuko', 'Leblanc'], leveling: 'Slow Roll ở Cấp 6', carousel: 'Nước Mắt > Gậy Quá Khổ > Giáp Lưới',
-    augments: ['prismatic_ticket', 'trade_sector', 'invoker_crest', 'jeweled_lotus_2'],
-    traits: [
-      { name: 'Vanguard', count: 3, style: 'silver' }, { name: 'Coven', count: 3, style: 'bronze' }, { name: 'Invoker', count: 3, style: 'bronze' },
-      { name: 'Brawler', count: 2, style: 'bronze' }, { name: 'Elderwood', count: 2, style: 'bronze' }, { name: 'Sprykin', count: 2, style: 'bronze' }
-    ],
-    units: [
-      { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 0, items: ['bluebuff', 'jeweled', 'morello'] },
-      { key: 'Alistar', name: 'Alistar', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Leblanc', name: 'LeBlanc', cost: 2, star: 3, row: 3, col: 2, items: ['shojin', 'nashor', 'jeweled'] },
-      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 4, items: ['morello'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Hecarim', name: 'Hecarim', cost: 3, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Kobuko', name: 'Kobuko', cost: 2, star: 3, row: 0, col: 1, items: [] },
-      { key: 'Veigar', name: 'Veigar', cost: 3, star: 3, row: 3, col: 6, items: [] }
-    ]
-  },
-  {
-    id: 'vanguard-alune', tier: 'S', name: 'Vanguard Alune', playstyle: 'Fast 9', difficulty: 'Hard', avgPlace: 4.17, pickRate: 0.30, winRate: 19.9, top4Rate: 54.6, setTag: 'TFTSet18',
-    earlyUnits: ['Rakan', 'Diana', 'Soraka', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) → Lv9 (5-1)', carousel: 'Kiếm B.F > Nước Mắt > Gậy Quá Khổ',
-    augments: ['level_up', 'patient_study', 'vanguard_crest', 'jeweled_lotus_3'],
-    traits: [
-      { name: 'Vanguard', count: 4, style: 'silver' }, { name: 'Blossom', count: 2, style: 'bronze' }, { name: 'Invoker', count: 2, style: 'bronze' },
-      { name: 'Lunar', count: 2, style: 'bronze' }, { name: 'Spellweaver', count: 2, style: 'bronze' }
-    ],
-    units: [
-      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'jeweled', 'guardbreaker'] },
-      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 4, items: ['morello', 'shojin', 'archangel'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: ['gargoyle', 'redemption'] },
-      { key: 'Ivern', name: 'Ivern', cost: 5, star: 2, row: 1, col: 2, items: [] },
-      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Diana', name: 'Diana', cost: 3, star: 2, row: 0, col: 1, items: [] },
-      { key: 'Fiddlesticks', name: 'Fiddlesticks', cost: 3, star: 2, row: 1, col: 5, items: [] },
-      { key: 'Rakan', name: 'Rakan', cost: 2, star: 2, row: 0, col: 5, items: [] }
-    ]
-  },
-  {
-    id: 'riftbeast-brambleback', tier: 'S', name: 'Riftbeast Brambleback', playstyle: 'Fast 8', difficulty: 'Easy', avgPlace: 4.23, pickRate: 0.70, winRate: 13.4, top4Rate: 54.9, setTag: 'TFTSet18',
-    earlyUnits: ['Pebbles', 'Krug', 'Murkwolf', 'Vi'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Cung Gỗ > Kiếm B.F > Đai Khổng Lồ',
-    augments: ['riftbeast_crown', 'healing_orbs_2', 'cybernetic_bulk_2', 'pandoras_items'],
-    traits: [
-      { name: 'Riftbeast', count: 7, style: 'gold' }, { name: 'Brawler', count: 2, style: 'bronze' }, { name: 'Invoker', count: 2, style: 'bronze' }
-    ],
-    units: [
-      { key: 'Brambleback', name: 'Brambleback', cost: 4, star: 2, row: 3, col: 1, items: ['guinsoo', 'ie', 'hoj'] },
-      { key: 'Krug', name: 'Krug', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'ElderDragon', name: 'Elder Dragon', cost: 5, star: 2, row: 1, col: 3, items: ['ie', 'lw', 'bt'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 4, items: ['redemption'] },
-      { key: 'Gnar', name: 'Gnar', cost: 5, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 5, items: [] },
-      { key: 'Murkwolf', name: 'Murkwolf', cost: 2, star: 2, row: 1, col: 1, items: [] },
-      { key: 'Pebbles', name: 'Pebbles', cost: 1, star: 3, row: 3, col: 5, items: [] }
-    ]
-  },
-  {
-    id: 'flora-fatalis-azir', tier: 'S', name: 'Flora Fatalis Azir', playstyle: 'lvl 7', difficulty: 'Medium', avgPlace: 4.25, pickRate: 0.23, winRate: 12.6, top4Rate: 55.1, setTag: 'TFTSet18',
-    earlyUnits: ['Teemo', 'Rammus', 'Soraka', 'Veigar'], leveling: 'Slow Roll ở Cấp 7', carousel: 'Gậy Quá Khổ > Cung Gỗ > Giáp Lưới',
-    augments: ['prismatic_ticket', 'magic_wand', 'trade_sector', 'healing_orbs_2'],
-    traits: [
-      { name: 'Flora Fatalis', count: 2, style: 'gold' }, { name: 'Sprykin', count: 3, style: 'silver' }, { name: 'Defender', count: 2, style: 'bronze' }
-    ],
-    units: [
-      { key: 'Azir', name: 'Azir', cost: 3, star: 3, row: 3, col: 0, items: ['guinsoo', 'archangel', 'gunblade'] },
-      { key: 'Rammus', name: 'Rammus', cost: 3, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'Zyra', name: 'Zyra', cost: 5, star: 2, row: 3, col: 2, items: ['shojin', 'morello'] },
-      { key: 'Fiddlesticks', name: 'Fiddlesticks', cost: 3, star: 3, row: 1, col: 3, items: ['ionic', 'crownguard'] },
-      { key: 'Soraka', name: 'Soraka', cost: 3, star: 2, row: 3, col: 4, items: [] },
-      { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 5, items: [] },
-      { key: 'Veigar', name: 'Veigar', cost: 3, star: 2, row: 3, col: 6, items: [] }
-    ]
-  },
-  {
-    id: 'lunar-nidalee', tier: 'A', name: 'Lunar Nidalee', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.32, pickRate: 0.22, winRate: 7.4, top4Rate: 55.8, setTag: 'TFTSet18',
-    earlyUnits: ['Vi', 'Varus', 'Diana', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Kiếm B.F > Cung Gỗ > Áo Choàng Bạc',
-    augments: ['lunar_crest', 'cybernetic_bulk_2', 'component_buffet', 'healing_orbs_2'],
-    traits: [
-      { name: 'Lunar', count: 4, style: 'gold' }, { name: 'Hunter', count: 2, style: 'bronze' }, { name: 'Invoker', count: 2, style: 'bronze' }
-    ],
-    units: [
-      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 1, items: ['bt', 'titans', 'hoj'] },
-      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 6, items: ['guinsoo', 'ie', 'lw'] },
-      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Diana', name: 'Diana', cost: 3, star: 2, row: 0, col: 2, items: [] },
-      { key: 'KogMaw', name: "Kog'Maw", cost: 3, star: 2, row: 3, col: 4, items: [] },
-      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 0, col: 1, items: [] },
-      { key: 'Varus', name: 'Varus', cost: 2, star: 2, row: 3, col: 5, items: [] }
-    ]
-  },
-  {
-    id: 'coven-ahri-carry', tier: 'A', name: 'Coven Ahri Carry', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.35, pickRate: 0.31, winRate: 14.2, top4Rate: 53.4, setTag: 'TFTSet18',
-    earlyUnits: ['Elise', 'Cassiopeia', 'Ahri', 'Shen'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Nước Mắt > Gậy Quá Khổ > Kiếm B.F',
-    augments: ['coven_crown', 'magic_wand', 'jeweled_lotus_2'],
-    traits: [{ name: 'Coven', count: 5, style: 'gold' }, { name: 'Spellweaver', count: 4, style: 'silver' }],
-    units: [
-      { key: 'Ahri', name: 'Ahri', cost: 4, star: 2, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'nashor'] },
-      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 4, items: ['morello', 'shojin'] },
-      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Cassiopeia', name: 'Cassiopeia', cost: 2, star: 2, row: 3, col: 1, items: [] },
-      { key: 'Shen', name: 'Shen', cost: 2, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: [] }
-    ]
-  },
-  {
-    id: 'elderwood-veigar', tier: 'A', name: 'Elderwood Veigar', playstyle: 'lvl 6', difficulty: 'Easy', avgPlace: 4.38, pickRate: 0.25, winRate: 11.5, top4Rate: 52.8, setTag: 'TFTSet18',
-    earlyUnits: ['Maokai', 'Veigar', 'Lulu', 'Hecarim'], leveling: 'Slow Roll ở Cấp 6', carousel: 'Nước Mắt > Gậy Quá Khổ > Găng Đấu Sĩ',
-    augments: ['trade_sector', 'jeweled_lotus_2', 'blue_battery'],
-    traits: [{ name: 'Elderwood', count: 6, style: 'gold' }, { name: 'Invoker', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Veigar', name: 'Veigar', cost: 3, star: 3, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'archangel'] },
-      { key: 'Maokai', name: 'Maokai', cost: 1, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'Hecarim', name: 'Hecarim', cost: 3, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 3, col: 4, items: [] },
-      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Ivern', name: 'Ivern', cost: 5, star: 2, row: 1, col: 3, items: [] }
-    ]
-  },
-  {
-    id: 'brawler-kobuko', tier: 'A', name: 'Brawler Slammer', playstyle: 'Fast 8', difficulty: 'Easy', avgPlace: 4.40, pickRate: 0.19, winRate: 9.8, top4Rate: 51.5, setTag: 'TFTSet18',
-    earlyUnits: ['Kobuko', 'Vi', 'Renekton', 'Alistar'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Đai Khổng Lồ > Giáp Lưới > Kiếm B.F',
-    augments: ['cybernetic_bulk_2', 'healing_orbs_2', 'component_buffet'],
-    traits: [{ name: 'Brawler', count: 6, style: 'gold' }, { name: 'Vanguard', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Kobuko', name: 'Kobuko', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 3, col: 1, items: ['bt', 'titans', 'sterak'] },
-      { key: 'Alistar', name: 'Alistar', cost: 2, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Gnar', name: 'Gnar', cost: 5, star: 2, row: 1, col: 3, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 3, col: 5, items: [] }
-    ]
-  },
-  {
-    id: 'blossom-xayah', tier: 'A', name: 'Blossom Xayah Rakan', playstyle: 'Fast 9', difficulty: 'Hard', avgPlace: 4.42, pickRate: 0.28, winRate: 18.5, top4Rate: 53.0, setTag: 'TFTSet18',
-    earlyUnits: ['Rakan', 'Shen', 'Neeko', 'Soraka'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) → Lv9 (5-2)', carousel: 'Kiếm B.F > Cung Gỗ > Găng Đấu Sĩ',
-    augments: ['level_up', 'prismatic_ticket', 'patient_study'],
-    traits: [{ name: 'Blossom', count: 5, style: 'gold' }, { name: 'Defender', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Xayah', name: 'Xayah', cost: 5, star: 2, row: 3, col: 6, items: ['guinsoo', 'ie', 'lw'] },
-      { key: 'Rakan', name: 'Rakan', cost: 2, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'redemption'] },
-      { key: 'Neeko', name: 'Neeko', cost: 2, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Soraka', name: 'Soraka', cost: 3, star: 2, row: 3, col: 1, items: [] },
-      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 1, col: 3, items: [] }
-    ]
-  },
-  {
-    id: 'hunter-aphelios', tier: 'A', name: 'Hunter Execution', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.45, pickRate: 0.21, winRate: 10.2, top4Rate: 52.1, setTag: 'TFTSet18',
-    earlyUnits: ['Ashe', 'Vi', 'Varus', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Cung Gỗ > Kiếm B.F > Áo Choàng',
-    augments: ['component_buffet', 'cybernetic_bulk_2', 'pandoras_items'],
-    traits: [{ name: 'Hunter', count: 4, style: 'gold' }, { name: 'Vanguard', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 6, items: ['guinsoo', 'ie', 'deathblade'] },
-      { key: 'Varus', name: 'Varus', cost: 2, star: 2, row: 3, col: 1, items: ['shojin', 'lw'] },
-      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 2, items: [] },
-      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 3, col: 4, items: [] }
-    ]
-  },
-  {
-    id: 'spellweaver-lillia', tier: 'B', name: 'Spellweaver Bomb', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.48, pickRate: 0.15, winRate: 8.5, top4Rate: 50.3, setTag: 'TFTSet18',
-    earlyUnits: ['Cassiopeia', 'Ahri', 'Shen', 'Lillia'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Gậy Quá Khổ > Nước Mắt > Đai Khổng Lồ',
-    augments: ['magic_wand', 'jeweled_lotus_2', 'blue_battery'],
-    traits: [{ name: 'Spellweaver', count: 6, style: 'gold' }, { name: 'Invoker', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 1, col: 3, items: ['bluebuff', 'jeweled', 'archangel'] },
-      { key: 'Ahri', name: 'Ahri', cost: 4, star: 2, row: 3, col: 2, items: ['shojin', 'morello'] },
-      { key: 'Shen', name: 'Shen', cost: 2, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 4, items: [] },
-      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: [] },
-      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 4, items: [] }
-    ]
-  },
-  {
-    id: 'defender-garen', tier: 'B', name: 'Defender Vanguard', playstyle: 'Fast 8', difficulty: 'Easy', avgPlace: 4.50, pickRate: 0.17, winRate: 9.1, top4Rate: 49.8, setTag: 'TFTSet18',
-    earlyUnits: ['Elise', 'Neeko', 'Vi', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Giáp Lưới > Áo Choàng Bạc > Đai Khổng Lồ',
-    augments: ['cybernetic_bulk_2', 'healing_orbs_2', 'vanguard_crest'],
-    traits: [{ name: 'Defender', count: 4, style: 'gold' }, { name: 'Vanguard', count: 4, style: 'silver' }],
-    units: [
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 2, items: ['gargoyle', 'redemption'] },
-      { key: 'Neeko', name: 'Neeko', cost: 2, star: 2, row: 1, col: 3, items: ['ionic', 'crownguard'] },
-      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 3, col: 1, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'jeweled'] }
-    ]
-  },
-  {
-    id: 'invoker-soraka', tier: 'B', name: 'Invoker Karma Style', playstyle: 'lvl 7', difficulty: 'Medium', avgPlace: 4.53, pickRate: 0.14, winRate: 8.0, top4Rate: 48.9, setTag: 'TFTSet18',
-    earlyUnits: ['Teemo', 'Soraka', 'Cassiopeia', 'Lillia'], leveling: 'Slow Roll ở Cấp 7', carousel: 'Nước Mắt > Gậy Quá Khổ > Kiếm B.F',
-    augments: ['invoker_crest', 'trade_sector', 'jeweled_lotus_2'],
-    traits: [{ name: 'Invoker', count: 6, style: 'gold' }, { name: 'Spellweaver', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Soraka', name: 'Soraka', cost: 3, star: 3, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'gunblade'] },
-      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'archangel'] },
-      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 0, items: [] },
-      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 1, col: 3, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] }
-    ]
-  },
-  {
-    id: 'executioner-varus', tier: 'B', name: 'Executioner Varus', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.55, pickRate: 0.16, winRate: 8.7, top4Rate: 49.2, setTag: 'TFTSet18',
-    earlyUnits: ['Ashe', 'Varus', 'Vi', 'Shen'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Cung Gỗ > Kiếm B.F > Găng Đấu Sĩ',
-    augments: ['component_buffet', 'jeweled_lotus_2', 'pandoras_items'],
-    traits: [{ name: 'Hunter', count: 3, style: 'silver' }, { name: 'Vanguard', count: 3, style: 'silver' }],
-    units: [
-      { key: 'Varus', name: 'Varus', cost: 2, star: 3, row: 3, col: 6, items: ['guinsoo', 'ie', 'lw'] },
-      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 2, items: ['bt', 'titans'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 1, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 2, items: [] }
-    ]
-  },
-  {
-    id: 'rapidfire-ashe', tier: 'B', name: 'Rapidfire Strikers', playstyle: 'Fast 8', difficulty: 'Easy', avgPlace: 4.58, pickRate: 0.13, winRate: 7.5, top4Rate: 48.1, setTag: 'TFTSet18',
-    earlyUnits: ['Ashe', 'Vi', 'Alistar', 'Shen'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Cung Gỗ > Kiếm B.F > Áo Choàng',
-    augments: ['cybernetic_bulk_2', 'prismatic_ticket', 'healing_orbs_2'],
-    traits: [{ name: 'Hunter', count: 4, style: 'gold' }, { name: 'Brawler', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 6, items: ['guinsoo', 'deathblade', 'runaan'] },
-      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 3, items: ['bt', 'qss'] },
-      { key: 'Kobuko', name: 'Kobuko', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Gnar', name: 'Gnar', cost: 5, star: 2, row: 3, col: 1, items: [] }
-    ]
-  },
-  {
-    id: 'freljord-tank', tier: 'B', name: 'Freljord Glacial', playstyle: 'Fast 8', difficulty: 'Hard', avgPlace: 4.60, pickRate: 0.11, winRate: 6.8, top4Rate: 47.5, setTag: 'TFTSet18',
-    earlyUnits: ['Ashe', 'Amumu', 'Sejuani', 'Lissandra'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Giáp Lưới > Nước Mắt > Đai Khổng Lồ',
-    augments: ['cybernetic_bulk_2', 'patient_study', 'pandoras_items'],
-    traits: [{ name: 'Vanguard', count: 4, style: 'silver' }, { name: 'Invoker', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'morello'] },
-      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 4, items: ['gargoyle', 'redemption'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'archangel'] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 1, col: 3, items: [] }
-    ]
-  },
-  {
-    id: 'hyper-roll-yordle', tier: 'C', name: 'Yordle Megamorph', playstyle: 'lvl 5', difficulty: 'Easy', avgPlace: 4.65, pickRate: 0.10, winRate: 6.2, top4Rate: 46.0, setTag: 'TFTSet18',
-    earlyUnits: ['Teemo', 'Tristana', 'Lulu', 'Poppy'], leveling: 'Hyper Roll ở Cấp 5', carousel: 'Găng Đấu Sĩ > Kiếm B.F > Gậy Quá Khổ',
-    augments: ['trade_sector', 'prismatic_ticket', 'jeweled_lotus_2'],
-    traits: [{ name: 'Sprykin', count: 4, style: 'gold' }, { name: 'Invoker', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'nashor'] },
-      { key: 'Veigar', name: 'Veigar', cost: 3, star: 3, row: 3, col: 4, items: ['shojin', 'archangel'] },
-      { key: 'Krug', name: 'Krug', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'Pebbles', name: 'Pebbles', cost: 1, star: 3, row: 0, col: 2, items: [] },
-      { key: 'Kobuko', name: 'Kobuko', cost: 2, star: 3, row: 0, col: 4, items: [] },
-      { key: 'Soraka', name: 'Soraka', cost: 3, star: 2, row: 3, col: 6, items: [] }
-    ]
-  },
-  {
-    id: 'demacia-elite', tier: 'C', name: 'Demacia Vanguard', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.70, pickRate: 0.08, winRate: 5.5, top4Rate: 45.2, setTag: 'TFTSet18',
-    earlyUnits: ['Lux', 'Jarvan', 'Sona', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2)', carousel: 'Kiếm B.F > Giáp Lưới > Áo Choàng',
-    augments: ['vanguard_crest', 'cybernetic_bulk_2', 'component_buffet'],
-    traits: [{ name: 'Vanguard', count: 4, style: 'silver' }, { name: 'Defender', count: 2, style: 'bronze' }],
-    units: [
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 2, items: ['gargoyle', 'redemption'] },
-      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'jeweled', 'gunblade'] },
-      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 2, items: ['morello'] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 3, col: 4, items: [] }
-    ]
-  }
+// ---------- Đội hình mẫu: TFT.OP.GG (Set 18, bản 18.6, mọi server, 86.488 ván/24h) ----------
+const COMPS_SOURCE = 'TFT.OP.GG · bản 18.6 · mọi server · 86.488 ván/24 giờ (lấy 04/11/2026)';
+const FRONT_KEYS = new Set(['alistar','amumu','krug','ornn','leona','shen','sejuani','rammus','malphite','nguoida','maokai','taric','warwick','kobuko','hecarim','vi','sett','brambleback','elise','camille','reksai','murkwolf','cuakycuc','cocthanhtinh','diana','fiddlesticks']);
+const TANK_ITEMS = new Set(['gargoyle','spirit','warmog','crownguard','protector','steadfast','sunfire','adaptive','dclaw']);
+// op.gg không cho ô đứng -> tự xếp: tướng chống chịu hàng trên, chủ lực hàng dưới (chỉ là gợi ý)
+function autoPlace(units) {
+  const isFront = (u) => FRONT_KEYS.has(u.key.toLowerCase()) || u.items.some((i) => TANK_ITEMS.has(i));
+  const front = units.filter(isFront);
+  const back = units.filter((u) => !isFront(u)).sort((a, b) => b.items.length - a.items.length);
+  const cols = [3, 2, 4, 1, 5, 0, 6];
+  const put = (arr, rows) => arr.forEach((u, i) => { u.row = rows[Math.floor(i / 7)] ?? rows[rows.length - 1]; u.col = cols[i % 7]; });
+  put(front, [0, 1]); put(back, [3, 2]);
+  return units;
+}
+// [id, hạng, tên, cấp, độ khó, avg, top1%, top4%, pick%, tộc/hệ (EN:số+g/s/b), tướng[trang bị]]
+const COMP_DATA = [
+  ['quai-rung-bui-gai-do','OP','Quái Rừng Bụi Gai Đỏ',8,'Hard',2.70,32.05,83.88,2.36,'Apex Predator:1g;Emerald Aspect:1g;Riftbeast:7g;Brawler:2b;Invoker:2b;Ravager:2b;Vanguard:2b','Pebbles;Murkwolf;Krug[gargoyle,spirit,warmog];Brambleback[eon,guinsoo,hoj];Sentinel[gargoyle,spirit,warmog];ElderDragon[ie,lw,flail];Gnar;Taric'],
+  ['than-rung-ezreal','OP','Thần Rừng Ezreal',9,'Hard',3.04,32.89,74.74,2.12,'Greenfather:1g;Old Growth:1g;Bounty Seeker:1g;Emerald Aspect:1g;Brawler:2b;Executioner:2b;Inferno:2b;Juggernaut:2b;Elderwood:3b','Alistar;Amumu;Ezreal[deathblade,lw,shojin];Draven[deathblade,guinsoo,kraken];Gnar;Ivern;Kennen[eon,hoj,rabadon];Maokai[gargoyle,spirit,warmog];Taric'],
+  ['quai-rung-maokai','OP','Quái Rừng Maokai',9,'Hard',3.21,31.48,72.00,1.80,'Apex Predator:1g;Greenfather:1g;Old Growth:1g;Bounty Seeker:1g;Emerald Aspect:1g;Inferno:2b;Juggernaut:2b;Vanguard:2b;Riftbeast:3b','Amumu;Sentinel;Draven[guinsoo,kraken,kraken];ElderDragon[ie,lw,flail];Ivern;Kennen[hoj,rabadon];Maokai[gargoyle,spirit,warmog];Taric'],
+  ['mat-troi-yunara','OP','Mặt Trời Yunara',6,'Easy',2.98,25.28,78.98,1.55,'Solar:3g;Executioner:2b;Summoner:2b;Spellweaver:2b;Juggernaut:2b;Blossom:3b','Karma[bluebuff,jeweled,rabadon];Leona;Yorick;Kayle;Leblanc[redbuff,void];Sejuani[gargoyle,gargoyle,warmog];Yunara[deathblade,lw,shojin];Azir'],
+  ['than-rung-teemo','S','Thần Rừng Teemo',6,'Easy',3.23,12.03,80.41,1.62,'Invoker:3s;Brawler:2b;Vanguard:2b;Spellweaver:2b;Elderwood:3b;Sprykin:3b','Kobuko;Veigar;Alistar[gargoyle,gargoyle,warmog];Leblanc[jeweled,rabadon,shojin];Teemo[jeweled,shojin,flail];Hecarim;Morgana[gunblade,morello,void];Sentinel'],
+  ['tien-phong-alune','S','Tiên Phong Alune',9,'Hard',3.09,28.83,75.46,1.02,'Attuned:1g;Greenfather:1g;Emerald Aspect:1g;Vanguard:4s;Flora Fatalis:1b;Lunar:2b;Spellweaver:2b;Defender:2b;Fae:2b;Invoker:2b','Rakan;Diana;Fiddlesticks;Lillia;Morgana[morello,shojin,void];Sentinel[gargoyle,protector,warmog];Alune[jeweled,shojin,flail];Ivern;Taric[gargoyle,steadfast,warmog]'],
+  ['dao-phu-azir','S','Đao Phủ Azir',7,'Normal',2.83,24.58,83.47,0.74,'Thornmaiden:1g;Flora Fatalis:2g;Executioner:3s;Blackthorn:2b;Summoner:2b;Defender:2b;Spellweaver:2b;Sprykin:3b','Veigar;Teemo;Azir[guinsoo,gunblade,rabadon];Fiddlesticks[bluebuff,eon,thief];Rammus[crownguard,gargoyle,gargoyle];Soraka;Zyra[morello,shojin,void];Kennen'],
+  ['tien-phong-alune-coven','S','Tiên Phong Alune Tiên Hắc Ám',8,'Hard',3.27,24.91,73.72,0.46,'Attuned:1g;Apex Predator:1g;Emerald Aspect:1g;Vanguard:4s;Lunar:2b;Spellweaver:2b;Invoker:2b;Coven:3b;Riftbeast:3b','Elise;Cassiopeia;Diana;Morgana[morello,rabadon,void];Sentinel[gargoyle,protector,warmog];Alune[jeweled,nashor,shojin];ElderDragon[ie,lw,flail];Taric'],
+  ['mat-trang-sejuani','S','Mặt Trăng Sejuani',6,'Easy',2.95,24.92,79.87,0.49,'Solar:3g;Lunar:3s;Rapidfire:3s;Inferno:3s;Defender:2b;Juggernaut:2b;Eclipse:6g','Leona;Varus;Kayle[emblunar,guinsoo,rabadon];Sejuani[gargoyle,spirit,warmog];Shen[gargoyle,spirit,warmog];Diana;Amumu;Aphelios[gs,kraken,lw]'],
+  ['thich-ung-rengar','A','Thích Ứng Rengar',7,'Normal',3.04,23.79,80.31,0.61,'Rival:1g;Caustic:1g;Adaptor:3s;Brawler:2b;Juggernaut:2b;Primal:2b;Blossom:3b','Yorick;KogMaw;Krug;MasterYi[eon,guinsoo,titans];Rengar[eon,guinsoo,titans];Vi[gargoyle,spirit,warmog];Nidalee[ie,shojin,sterak];Sett'],
+  ['dung-si-ashe','A','Dũng Sĩ Ashe',9,'Hard',3.02,26.38,75.46,0.26,'Greenfather:1g;Old Growth:1g;Emerald Aspect:1g;Juggernaut:4s;Hunter:2b;Inferno:2b;Vanguard:2b;Primal:2b','Rakan;Vi;Amumu;Sivir[ie,shojin,flail];Ashe[lw,redbuff,shojin];Ivern;Kennen[bt,eon,rabadon];Maokai[gargoyle,spirit,warmog];Taric'],
+  ['dung-si-zyra','A','Dũng Sĩ Zyra',8,'Normal',3.23,20.74,75.00,0.29,'Old Growth:1g;Thornmaiden:1g;Juggernaut:6g;Hunter:2b;Primal:2b;Summoner:2b','Yorick;CuaKyCuc;Sejuani;Vi;Amumu[gargoyle,spirit,warmog];Sivir[gs,ie,flail];Zyra[archangel,archangel,gunblade];Ashe[lw,redbuff,shojin];Maokai'],
+  ['ve-quan-cassiopeia','A','Vệ Quân Cassiopeia',7,'Normal',3.81,10.29,64.63,0.49,'Flora Fatalis:2g;Defender:6g;Spellweaver:2b','Leona;Ornn;Shen;Cassiopeia[archangel,bluebuff,gunblade];Fiddlesticks[ionic,spirit,sunfire];Rammus[gargoyle,steadfast,warmog];Lillia;Soraka[jeweled,nashor,shojin]'],
+  ['than-rung-ezreal-lv8','A','Thần Rừng Ezreal (Lv8)',8,'Normal',4.08,12.61,57.96,0.52,'Emerald Aspect:1g;Elderwood:7g;Flora Fatalis:1b;Brawler:2b;Executioner:2b;Vanguard:2b','Ornn;Xayah;Alistar;Leblanc;Hecarim;Ezreal[deathblade,lw,shojin];Soraka[archangel,rabadon,shojin];Gnar[bt,sterak,titans];Taric[gargoyle,protector,warmog]'],
+  ['gai-den-warwick','A','Gai Đen Warwick',6,'Easy',3.72,8.11,71.62,0.35,'Monolith:1g;Blackthorn:4s;Ravager:4s;Brawler:2b;Riftbeast:3b','RekSai;Murkwolf[deathblade,eon,hoj];Warwick[shojin,sterak,titans];Azir[guinsoo,morello,void];Diana;Krug;Brambleback;Malphite[crownguard,gargoyle,warmog]'],
+  ['dao-phu-soraka','A','Đao Phủ Soraka',8,'Normal',2.97,19.81,83.96,0.17,'Monolith:1g;Thornmaiden:1g;Flora Fatalis:2g;Summoner:3g;Executioner:4g;Blackthorn:2b;Inferno:2b;Juggernaut:2b','Yorick;Azir;Fiddlesticks;Amumu;Ezreal;Malphite[crownguard,gargoyle,warmog];Soraka[archangel,rabadon,shojin];Zyra[archangel,shojin,void];Kennen[adaptive,flail,thief]'],
+  ['lien-kich-kayle','A','Liên Kích Kayle',6,'Easy',3.18,17.95,76.92,0.18,'Solar:3g;Rapidfire:3s;Vanguard:2b;Defender:2b;Fae:2b;Juggernaut:2b;Elderwood:3b','Leona;Ornn[gargoyle,spirit,warmog];Rakan;Xayah[deathblade,guinsoo,redbuff];Kayle[guinsoo,jeweled,rabadon];Sejuani[gargoyle,spirit,warmog];Hecarim;Aphelios'],
+  ['quai-rung-krug','A','Quái Rừng Quái Đá Krug',8,'Normal',4.49,4.57,52.40,0.65,'Riftbeast:9g;Invoker:2b;Ravager:2b','MamNon;Pebbles[bluebuff,jeweled,rabadon];CocThanhTinh;Murkwolf;CuaKyCuc;Krug[gargoyle,spirit,warmog];ChimMe[gs,guinsoo,ie];Brambleback[eon,guinsoo,qss];Sentinel'],
+  ['dao-phu-ezreal','C','Đao Phủ Ezreal',8,'Normal',4.46,2.97,46.53,0.16,'Flora Fatalis:2g;Executioner:4g;Spellweaver:2b;Brawler:2b;Defender:2b;Blossom:3b;Elderwood:3b','Ornn;Alistar;Yunara;Fiddlesticks;Ahri[embexec,bluebuff,rabadon];Ezreal[deathblade,lw,shojin];Sett[gargoyle,gargoyle,warmog];Soraka[gunblade,rabadon,shojin]'],
+  ['hoa-linh-ahri','D','Hoa Linh Ahri',8,'Normal',4.60,8.63,46.27,0.40,'Emerald Aspect:1g;Invoker:3s;Spellweaver:2b;Brawler:2b;Vanguard:2b;Blossom:3b;Riftbeast:3b','Karma;Pebbles;Krug;Ahri[jeweled,shojin,flail];Morgana[morello,rabadon,void];Sentinel[gargoyle,protector,warmog];Sett[gargoyle,sterak,warmog];Taric'],
+  ['quai-rung-sivir','D','Quái Rừng Sivir',8,'Normal',5.06,5.50,35.78,0.17,'Monolith:1g;Caustic:1g;Blackthorn:2b;Brawler:2b;Hunter:2b;Primal:2b;Adaptor:2b;Invoker:2b;Riftbeast:3b','MamNon;RekSai;KogMaw;Krug;Malphite[crownguard,gargoyle,warmog];Nidalee[ie,shojin,sterak];Sentinel[adaptive,protector];Sivir[ie,redbuff,flail]'],
+  ['mat-trang-aphelios','D','Mặt Trăng Aphelios',8,'Normal',4.19,8.69,57.98,1.34,'Caustic:1g;Lunar:2b;Rapidfire:2b;Vanguard:2b;Inferno:2b;Juggernaut:2b;Adaptor:2b;Invoker:2b;Primal:2b','Varus;Diana;KogMaw;Vi;Amumu[gargoyle,spirit,warmog];Aphelios[gs,guinsoo,kraken]']
 ];
+const DIFF_VI = { Hard: 'Khó', Normal: 'Trung Bình', Easy: 'Dễ' };
+const FALLBACK_SET18_COMPS = COMP_DATA.map(([id, tier, name, lv, diff, avg, first, top4, pick, traits, units]) => ({
+  id, tier, name, playstyle: `Lv ${lv}`, difficulty: DIFF_VI[diff] || diff,
+  avgPlace: avg, pickRate: pick, winRate: first, top4Rate: top4, setTag: 'TFTSet18',
+  earlyUnits: [], leveling: `Cấp ${lv}`, carousel: '', augments: [],
+  traits: traits.split(';').map((t) => { const [n, c] = t.split(':'); return { name: n, count: parseInt(c, 10), style: { g: 'gold', s: 'silver', b: 'bronze' }[c.slice(-1)] }; }),
+  units: autoPlace(units.split(';').map((x) => {
+    const m = x.match(/^(\w+)(?:\[(.*)\])?$/);
+    const info = lookupChamp(m[1].toLowerCase());
+    return { key: m[1], name: info?.name || m[1], cost: info?.cost || 3, star: 2, items: m[2] ? m[2].split(',') : [] };
+  }))
+}));
 
 const AugmentBadge = ({ augId, compact = false }) => {
   const index = useAugmentIndex();
@@ -583,7 +423,7 @@ const iconUrl = candidates[step] || '';
 
   if (compact) {
     return (
-      <div title={`${aug.name} — ${aug.desc}`} className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
+      <div title={aug.desc ? `${aug.name} — ${aug.desc}` : aug.name} className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
         <span className={`w-6 h-6 rounded-[4px] bg-black/60 shrink-0 flex items-center justify-center overflow-hidden ${frame}`}>
           {showImg ? (
             <img src={iconUrl} alt={aug.name} loading="lazy" onError={() => setStep((s) => s + 1)} className="w-full h-full object-cover" />
@@ -608,9 +448,9 @@ const iconUrl = candidates[step] || '';
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-extrabold text-white truncate drop-shadow-sm">{aug.name}</span>
-          <span className="text-[10px] font-black text-emerald-400 shrink-0">#{aug.avgPlace} Avg</span>
+          {aug.avgPlace ? <span className="text-[10px] font-black text-emerald-400 shrink-0">#{aug.avgPlace} Avg</span> : null}
         </div>
-        <p className="text-[11px] text-gray-300/90 mt-0.5 leading-snug">{aug.desc}</p>
+        {aug.desc ? <p className="text-[11px] text-gray-300/90 mt-0.5 leading-snug">{aug.desc}</p> : null}
       </div>
     </div>
   );
@@ -623,7 +463,11 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
 
   const candidateUrls = useMemo(() => {
     const list = [];
-    if (dynamicChampMap && dynamicChampMap[lowerKey]?.iconUrl) list.push(dynamicChampMap[lowerKey].iconUrl);
+    const info0 = lookupChamp(lowerKey);
+    const dk = info0 ? info0.key.toLowerCase() : lowerKey;
+    if (dynamicChampMap && dynamicChampMap[dk]?.iconUrl) list.push(dynamicChampMap[dk].iconUrl); // CDragon trước
+    if (info0?.img) list.push(info0.img); // metatft.gg nếu CDragon chưa có
+    if (info0?.opgg) list.push(info0.opgg);
     list.push(`https://cdn.metatft.com/file/metatft/champions/da_18_${lowerKey}.png`);
     list.push(`https://cdn.metatft.com/file/metatft/champions/tft18_${lowerKey}.png`);
     list.push(`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${cleanKey}.png`);
@@ -633,7 +477,8 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
   const currentImgUrl = candidateUrls[Math.min(fallbackStep, candidateUrls.length - 1)];
   const costBorders = { 1: 'border-[#788292]', 2: 'border-[#11b288]', 3: 'border-[#207ac7]', 4: 'border-[#c440da]', 5: 'border-[#ffb93b]' };
   const sizeDims = { sm: 'w-9 h-9', md: 'w-12 h-12', lg: 'w-14 h-14' };
-  const cost = dynamicChampMap?.[lowerKey]?.cost || unit.cost || 3;
+  const info = lookupChamp(lowerKey);
+  const cost = info?.cost || unit.cost || 3;
 
   return (
     <div onClick={onClick} className={`group flex flex-col items-center select-none ${onClick ? 'cursor-pointer' : ''}`}>
@@ -654,7 +499,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
         {unit.items && unit.items.length > 0 && (
           <div className="absolute -bottom-1.5 inset-x-0 flex items-center justify-center gap-[1px] z-10">
             {unit.items.slice(0, 3).map((itemId, idx) => {
-              const itemObj = ITEMS_CATALOG[itemId];
+              const itemObj = ITEMS_CATALOG[ITEM_ALIAS[itemId] || itemId];
               return itemObj ? (
                 <img key={idx} src={itemObj.icon} alt={itemObj.name} title={itemObj.name} className="w-4 h-4 rounded-[2px] border border-[#1e2328] bg-slate-950 shadow-md" />
               ) : null;
@@ -665,7 +510,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
 
       {showName && (
         <span className="mt-2 text-[10px] text-[#f0e6d2] font-semibold leading-none truncate max-w-[56px] text-center drop-shadow-sm">
-          {unit.name || unit.key}
+          {info?.name || unit.name || unit.key}
         </span>
       )}
     </div>
@@ -684,7 +529,7 @@ const HoneycombBoard4x7 = ({ units = [], dynamicChampMap, interactive = false, o
   return (
     <div className="bg-[#091428] border border-[#c89b3c]/20 shadow-inner rounded-md p-3 select-none">
       <div className="text-[11px] font-bold text-[#a09b8c] mb-2 flex items-center justify-between">
-        <span>Sơ đồ xếp bài chuẩn (4x7 Board Positioning)</span>
+        <span>Sơ đồ xếp bài chuẩn (bàn cờ 4x7)</span>
         <span className="text-[10px] text-[#c89b3c]">Hàng trên: Chống chịu • Hàng dưới: Chủ lực</span>
       </div>
       <div className="flex flex-col gap-1.5 items-center py-1">
@@ -693,11 +538,12 @@ const HoneycombBoard4x7 = ({ units = [], dynamicChampMap, interactive = false, o
             {[0, 1, 2, 3, 4, 5, 6].map(col => {
               const cellUnit = unitPosMap.get(`${row}-${col}`);
               const cleanKey = cellUnit ? (cellUnit.key || '').replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
-              const imgUrl = cellUnit ? (dynamicChampMap?.[cleanKey]?.iconUrl || `https://cdn.metatft.com/file/metatft/champions/da_18_${cleanKey}.png`) : '';
+              const cInfo = cellUnit ? lookupChamp(cleanKey) : null;
+              const imgUrl = cellUnit ? (dynamicChampMap?.[cInfo ? cInfo.key.toLowerCase() : cleanKey]?.iconUrl || cInfo?.img || `https://cdn.metatft.com/file/metatft/champions/da_18_${cleanKey}.png`) : '';
 
               return (
                 <div key={col} onClick={() => interactive && onCellClick && onCellClick(row, col, cellUnit)} className={`relative flex flex-col items-center ${interactive ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}>
-                  <div style={{ clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)' }} className={`w-10 h-11 sm:w-11 sm:h-12 p-[2px] flex items-center justify-center shadow-lg ${cellUnit ? costHexColors[cellUnit.cost] || 'bg-[#c89b3c]' : 'bg-[#1e2328] hover:bg-[#c89b3c]/30'}`}>
+                  <div style={{ clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)' }} className={`w-10 h-11 sm:w-11 sm:h-12 p-[2px] flex items-center justify-center shadow-lg ${cellUnit ? costHexColors[cInfo?.cost || cellUnit.cost] || 'bg-[#c89b3c]' : 'bg-[#1e2328] hover:bg-[#c89b3c]/30'}`}>
                     <div style={{ clipPath: 'polygon(50% 0%, 95% 25%, 95% 75%, 50% 100%, 5% 75%, 5% 25%)' }} className="w-full h-full bg-[#0a1428] overflow-hidden flex items-center justify-center">
                       {cellUnit ? (
                         <img src={imgUrl} alt={cellUnit.name} onError={(e) => { e.currentTarget.src = `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${cellUnit.key}.png`; }} className="w-full h-full object-cover" />
@@ -706,7 +552,7 @@ const HoneycombBoard4x7 = ({ units = [], dynamicChampMap, interactive = false, o
                       )}
                     </div>
                   </div>
-                  {cellUnit && <span className="text-[9px] text-[#f0e6d2] font-bold mt-0.5 truncate max-w-[44px] drop-shadow-md">{cellUnit.name || cellUnit.key}</span>}
+                  {cellUnit && <span className="text-[9px] text-[#f0e6d2] font-bold mt-0.5 truncate max-w-[44px] drop-shadow-md">{cInfo?.name || cellUnit.name || cellUnit.key}</span>}
                 </div>
               );
             })}
@@ -719,8 +565,9 @@ const HoneycombBoard4x7 = ({ units = [], dynamicChampMap, interactive = false, o
 
 const TraitBadge = ({ trait, dynamicTraitMap }) => {
   const [iconErr, setIconErr] = useState(false);
+  const viName = TRAIT_VI[trait.name] || trait.name;
   const cleanTrait = trait.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const traitIconUrl = dynamicTraitMap?.[cleanTrait]?.iconUrl || `https://cdn.metatft.com/file/metatft/traits/${cleanTrait}.png`;
+  const traitIconUrl = dynamicTraitMap?.[normAugName(viName)]?.iconUrl || dynamicTraitMap?.[normAugName(trait.name)]?.iconUrl || `https://c-tft-api.op.gg/img/set/18/tft-trait/Trait_Icon_18_${OPGG_TRAIT[trait.name] || trait.name.replace(/\s+/g, '')}.TFT_Set18.png`;
 
   const styles = {
     gold: 'bg-[#332714] border-[#c89b3c] text-[#f5d17f]',
@@ -729,13 +576,13 @@ const TraitBadge = ({ trait, dynamicTraitMap }) => {
   };
 
   return (
-    <div className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[11px] font-bold shadow-sm ${styles[trait.style] || styles.bronze}`}>
+    <div title={viName} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[11px] font-bold shadow-sm ${styles[trait.style] || styles.bronze}`}>
       {!iconErr ? (
         <img src={traitIconUrl} alt={trait.name} onError={() => setIconErr(true)} className="w-3.5 h-3.5 object-contain brightness-125 drop-shadow-sm" />
       ) : (
         <span className="text-[9px]">◆</span>
       )}
-      <span className="drop-shadow-sm">{trait.count}</span>
+      <span className="drop-shadow-sm">{trait.count} {viName}</span>
     </div>
   );
 };
@@ -763,6 +610,12 @@ export default function MetaTFTApp() {
 
   useEffect(() => {
     document.title = "Brown's Meta Book - Set 18";
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    loadCDragon().then((o) => { if (alive) { setDynamicChampMap(o.champ); setDynamicTraitMap(o.trait); } });
+    return () => { alive = false; };
   }, []);
 
   const triggerToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3200); };
@@ -842,6 +695,7 @@ export default function MetaTFTApp() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
               <div>
                 <h1 className="text-xl sm:text-2xl font-extrabold text-[#f0e6d2] tracking-tight">Meta Team Comps Tier List ({compsList.length} Đội Hình)</h1>
+                <p className="text-[11px] text-[#a09b8c] mt-1">Nguồn: {COMPS_SOURCE}</p>
               </div>
               <input
                 type="text"
@@ -859,7 +713,7 @@ export default function MetaTFTApp() {
                   const isExpanded = !!expandedComps[comp.id];
                   const isCopied = copiedCompId === comp.id;
                   const teamCode = encodeTeamPlannerCode(comp.units, comp.setTag);
-                  const tierColors = { S: 'bg-[#ff6b6b] text-[#141518]', A: 'bg-[#feca57] text-[#141518]', B: 'bg-[#48dbfb] text-[#141518]', C: 'bg-[#a4b0be] text-[#141518]' };
+                  const tierColors = { OP: 'bg-[#ff3b5c] text-white', D: 'bg-[#8395a7] text-[#141518]', S: 'bg-[#ff6b6b] text-[#141518]', A: 'bg-[#feca57] text-[#141518]', B: 'bg-[#48dbfb] text-[#141518]', C: 'bg-[#a4b0be] text-[#141518]' };
 
                   return (
                     <div key={comp.id} className="bg-[#1e2328] border border-[#c89b3c]/20 rounded-sm overflow-hidden hover:border-[#c89b3c]/50 transition-all">
@@ -884,12 +738,12 @@ export default function MetaTFTApp() {
                           <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
                             {comp.units.map((u, idx) => <ChampionPortraitTile key={idx} unit={u} dynamicChampMap={dynamicChampMap} />)}
                           </div>
-                          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/5">
+                          {(comp.augments || []).length > 0 && <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/5">
                             <span className="text-[10px] font-bold text-[#c89b3c] flex items-center gap-1 mr-1">
                               <Sparkles className="w-3.5 h-3.5" /> Lõi chuẩn:
                             </span>
                             {(comp.augments || []).map((augId, i) => <AugmentBadge key={i} augId={augId} compact={true} />)}
-                          </div>
+                          </div>}
                         </div>
 
                         <div className="flex flex-col sm:flex-row lg:flex-col items-end justify-between gap-2.5 lg:w-[340px] shrink-0 border-t lg:border-t-0 border-white/5 pt-2.5 lg:pt-0">
@@ -907,10 +761,10 @@ export default function MetaTFTApp() {
                             </button>
                           </div>
                           <div className="grid grid-cols-4 gap-3 text-center tabular-nums w-full">
-                            <div><div className="text-sm font-extrabold text-[#11b288]">{comp.avgPlace.toFixed(2)}</div><div className="text-[10px] text-[#a09b8c]">Avg Place</div></div>
-                            <div><div className="text-sm font-extrabold text-[#f0e6d2]">{comp.pickRate.toFixed(2)}</div><div className="text-[10px] text-[#a09b8c]">Pick Rate</div></div>
-                            <div><div className="text-sm font-extrabold text-[#ff6b6b]">{comp.winRate.toFixed(1)}%</div><div className="text-[10px] text-[#a09b8c]">Win Rate</div></div>
-                            <div><div className="text-sm font-extrabold text-[#11b288]">{comp.top4Rate.toFixed(1)}%</div><div className="text-[10px] text-[#a09b8c]">Top 4 Rate</div></div>
+                            <div><div className="text-sm font-extrabold text-[#11b288]">{comp.avgPlace.toFixed(2)}</div><div className="text-[10px] text-[#a09b8c]">Hạng trung bình</div></div>
+                            <div><div className="text-sm font-extrabold text-[#f0e6d2]">{comp.pickRate.toFixed(2)}%</div><div className="text-[10px] text-[#a09b8c]">Tỷ lệ chọn</div></div>
+                            <div><div className="text-sm font-extrabold text-[#ff6b6b]">{comp.winRate.toFixed(1)}%</div><div className="text-[10px] text-[#a09b8c]">Tỷ lệ thắng</div></div>
+                            <div><div className="text-sm font-extrabold text-[#11b288]">{comp.top4Rate.toFixed(1)}%</div><div className="text-[10px] text-[#a09b8c]">Tỷ lệ Top 4</div></div>
                           </div>
                         </div>
                       </div>
@@ -935,12 +789,12 @@ export default function MetaTFTApp() {
                                 <Sparkles className="w-4 h-4" /> Lõi Tốt Nhất
                               </div>
                               <div className="grid grid-cols-1 gap-2">
-                                {(comp.augments || []).map((augId, idx) => <AugmentBadge key={idx} augId={augId} compact={false} />)}
+                                {(comp.augments || []).length ? (comp.augments || []).map((augId, idx) => <AugmentBadge key={idx} augId={augId} compact={false} />) : <div className="text-[11px] text-[#a09b8c]">TFT.OP.GG chưa cung cấp lõi cho đội hình này.</div>}
                               </div>
                             </div>
                             <div className="bg-[#1e2328] border border-[#c89b3c]/20 rounded-sm p-3 space-y-2 text-xs">
-                              <div><span className="text-[#a09b8c]">Early: </span><span className="text-[#0ac8b9] font-bold">{(comp.earlyUnits || []).join(', ')}</span></div>
-                              <div><span className="text-[#a09b8c]">Leveling: </span><span className="text-[#f0e6d2] font-bold">{comp.leveling}</span></div>
+                              <div><span className="text-[#a09b8c]">Đầu game: </span><span className="text-[#0ac8b9] font-bold">{(comp.earlyUnits || []).map(champName).join(', ') || '—'}</span></div>
+                              <div><span className="text-[#a09b8c]">Lên cấp: </span><span className="text-[#f0e6d2] font-bold">{comp.leveling}</span></div>
                             </div>
                           </div>
                         </div>
