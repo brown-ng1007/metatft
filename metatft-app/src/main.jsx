@@ -98,7 +98,6 @@ function decodeTeamPlannerCode(codeStr) {
   }
 }
 
-// Cập nhật Catalog lõi với các đường dẫn icon chuẩn từ CommunityDragon tương tự tft.op.gg
 const AUGMENTS_CATALOG = {
   vanguard_crest: { id: 'vanguard_crest', name: 'Huy Hiệu Hộ Vệ (Vanguard Crest)', tier: 'Gold', avgPlace: 3.78, desc: 'Nhận 1 Ấn Hộ Vệ và 1 tướng Hộ Vệ.', icon: 'https://raw.communitydragon.org/latest/game/assets/ux/traiticons/trait_icon_vanguard.png' },
   coven_crown: { id: 'coven_crown', name: 'Vương Miện Tiên Hắc Ám (Coven Crown)', tier: 'Prismatic', avgPlace: 3.62, desc: 'Nhận 1 Ấn Tiên Hắc Ám, 1 Bùa Xanh và 1 Morgana.', icon: 'https://raw.communitydragon.org/latest/game/assets/ux/traiticons/trait_icon_coven.png' },
@@ -252,6 +251,189 @@ const FALLBACK_SET18_COMPS = [
       { key: 'KogMaw', name: "Kog'Maw", cost: 3, star: 2, row: 3, col: 4, items: [] },
       { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 0, col: 1, items: [] },
       { key: 'Varus', name: 'Varus', cost: 2, star: 2, row: 3, col: 5, items: [] }
+    ]
+  },
+  {
+    id: 'coven-ahri-carry', tier: 'A', name: 'Coven Ahri Carry', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.35, pickRate: 0.31, winRate: 14.2, top4Rate: 53.4, setTag: 'TFTSet18',
+    earlyUnits: ['Elise', 'Cassiopeia', 'Ahri', 'Shen'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Roll khung Coven + Spellweaver', carousel: 'Nước Mắt > Gậy Quá Khổ > Kiếm B.F',
+    augments: ['coven_crown', 'magic_wand', 'jeweled_lotus_2'],
+    traits: [{ name: 'Coven', count: 5, style: 'gold' }, { name: 'Spellweaver', count: 4, style: 'silver' }],
+    units: [
+      { key: 'Ahri', name: 'Ahri', cost: 4, star: 2, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'nashor'] },
+      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 4, items: ['morello', 'shojin'] },
+      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Cassiopeia', name: 'Cassiopeia', cost: 2, star: 2, row: 3, col: 1, items: [] },
+      { key: 'Shen', name: 'Shen', cost: 2, star: 2, row: 0, col: 2, items: [] },
+      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: [] }
+    ]
+  },
+  {
+    id: 'elderwood-veigar', tier: 'A', name: 'Elderwood Veigar', playstyle: 'lvl 6', difficulty: 'Easy', avgPlace: 4.38, pickRate: 0.25, winRate: 11.5, top4Rate: 52.8, setTag: 'TFTSet18',
+    earlyUnits: ['Maokai', 'Veigar', 'Lulu', 'Hecarim'], leveling: 'Slow Roll ở Cấp 6 tìm Veigar 3★ và các tướng Elderwood', carousel: 'Nước Mắt > Gậy Quá Khổ > Găng Đấu Sĩ',
+    augments: ['trade_sector', 'jeweled_lotus_2', 'blue_battery'],
+    traits: [{ name: 'Elderwood', count: 6, style: 'gold' }, { name: 'Invoker', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Veigar', name: 'Veigar', cost: 3, star: 3, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'archangel'] },
+      { key: 'Maokai', name: 'Maokai', cost: 1, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
+      { key: 'Hecarim', name: 'Hecarim', cost: 3, star: 2, row: 0, col: 2, items: [] },
+      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 3, col: 4, items: [] },
+      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Ivern', name: 'Ivern', cost: 5, star: 2, row: 1, col: 3, items: [] }
+    ]
+  },
+  {
+    id: 'brawler-kobuko', tier: 'A', name: 'Brawler Slammer', playstyle: 'Fast 8', difficulty: 'Easy', avgPlace: 4.40, pickRate: 0.19, winRate: 9.8, top4Rate: 51.5, setTag: 'TFTSet18',
+    earlyUnits: ['Kobuko', 'Vi', 'Renekton', 'Alistar'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Kẹp Brawler tối đa', carousel: 'Đai Khổng Lồ > Giáp Lưới > Kiếm B.F',
+    augments: ['cybernetic_bulk_2', 'healing_orbs_2', 'component_buffet'],
+    traits: [{ name: 'Brawler', count: 6, style: 'gold' }, { name: 'Vanguard', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Kobuko', name: 'Kobuko', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 3, col: 1, items: ['bt', 'titans', 'sterak'] },
+      { key: 'Alistar', name: 'Alistar', cost: 2, star: 2, row: 0, col: 2, items: [] },
+      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Gnar', name: 'Gnar', cost: 5, star: 2, row: 1, col: 3, items: [] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 3, col: 5, items: [] }
+    ]
+  },
+  {
+    id: 'blossom-xayah', tier: 'A', name: 'Blossom Xayah Rakan', playstyle: 'Fast 9', difficulty: 'Hard', avgPlace: 4.42, pickRate: 0.28, winRate: 18.5, top4Rate: 53.0, setTag: 'TFTSet18',
+    earlyUnits: ['Rakan', 'Shen', 'Neeko', 'Soraka'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) → Lv9 (5-2) Roll Xayah & Rakan', carousel: 'Kiếm B.F > Cung Gỗ > Găng Đấu Sĩ',
+    augments: ['level_up', 'prismatic_ticket', 'patient_study'],
+    traits: [{ name: 'Blossom', count: 5, style: 'gold' }, { name: 'Defender', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Xayah', name: 'Xayah', cost: 5, star: 2, row: 3, col: 6, items: ['guinsoo', 'ie', 'lw'] },
+      { key: 'Rakan', name: 'Rakan', cost: 2, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'redemption'] },
+      { key: 'Neeko', name: 'Neeko', cost: 2, star: 2, row: 0, col: 2, items: [] },
+      { key: 'Soraka', name: 'Soraka', cost: 3, star: 2, row: 3, col: 1, items: [] },
+      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 1, col: 3, items: [] }
+    ]
+  },
+  {
+    id: 'hunter-aphelios', tier: 'A', name: 'Hunter Execution', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.45, pickRate: 0.21, winRate: 10.2, top4Rate: 52.1, setTag: 'TFTSet18',
+    earlyUnits: ['Ashe', 'Vi', 'Varus', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Kẹp form Hunter và khởi động tuyến sau', carousel: 'Cung Gỗ > Kiếm B.F > Áo Choàng',
+    augments: ['component_buffet', 'cybernetic_bulk_2', 'pandoras_items'],
+    traits: [{ name: 'Hunter', count: 4, style: 'gold' }, { name: 'Vanguard', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 6, items: ['guinsoo', 'ie', 'deathblade'] },
+      { key: 'Varus', name: 'Varus', cost: 2, star: 2, row: 3, col: 1, items: ['shojin', 'lw'] },
+      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 2, items: [] },
+      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 3, col: 4, items: [] }
+    ]
+  },
+  {
+    id: 'spellweaver-lillia', tier: 'B', name: 'Spellweaver Bomb', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.48, pickRate: 0.15, winRate: 8.5, top4Rate: 50.3, setTag: 'TFTSet18',
+    earlyUnits: ['Cassiopeia', 'Ahri', 'Shen', 'Lillia'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Tập trung vào form pháp sư đa tuyến', carousel: 'Gậy Quá Khổ > Nước Mắt > Đai Khổng Lồ',
+    augments: ['magic_wand', 'jeweled_lotus_2', 'blue_battery'],
+    traits: [{ name: 'Spellweaver', count: 6, style: 'gold' }, { name: 'Invoker', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 1, col: 3, items: ['bluebuff', 'jeweled', 'archangel'] },
+      { key: 'Ahri', name: 'Ahri', cost: 4, star: 2, row: 3, col: 2, items: ['shojin', 'morello'] },
+      { key: 'Shen', name: 'Shen', cost: 2, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
+      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 4, items: [] },
+      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: [] },
+      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 4, items: [] }
+    ]
+  },
+  {
+    id: 'defender-garen', tier: 'B', name: 'Defender Vanguard', playstyle: 'Fast 8', difficulty: 'Easy', avgPlace: 4.50, pickRate: 0.17, winRate: 9.1, top4Rate: 49.8, setTag: 'TFTSet18',
+    earlyUnits: ['Elise', 'Neeko', 'Vi', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Xây dựng hàng thủ cứng cáp', carousel: 'Giáp Lưới > Áo Choàng Bạc > Đai Khổng Lồ',
+    augments: ['cybernetic_bulk_2', 'healing_orbs_2', 'vanguard_crest'],
+    traits: [{ name: 'Defender', count: 4, style: 'gold' }, { name: 'Vanguard', count: 4, style: 'silver' }],
+    units: [
+      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 2, items: ['gargoyle', 'redemption'] },
+      { key: 'Neeko', name: 'Neeko', cost: 2, star: 2, row: 1, col: 3, items: ['ionic', 'crownguard'] },
+      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 3, col: 1, items: [] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'jeweled'] }
+    ]
+  },
+  {
+    id: 'invoker-soraka', tier: 'B', name: 'Invoker Karma Style', playstyle: 'lvl 7', difficulty: 'Medium', avgPlace: 4.53, pickRate: 0.14, winRate: 8.0, top4Rate: 48.9, setTag: 'TFTSet18',
+    earlyUnits: ['Teemo', 'Soraka', 'Cassiopeia', 'Lillia'], leveling: 'Slow Roll ở Cấp 7 để nâng Soraka và các tướng Invoker lên 3 sao', carousel: 'Nước Mắt > Gậy Quá Khổ > Kiếm B.F',
+    augments: ['invoker_crest', 'trade_sector', 'jeweled_lotus_2'],
+    traits: [{ name: 'Invoker', count: 6, style: 'gold' }, { name: 'Spellweaver', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Soraka', name: 'Soraka', cost: 3, star: 3, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'gunblade'] },
+      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'archangel'] },
+      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
+      { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 0, items: [] },
+      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 1, col: 3, items: [] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] }
+    ]
+  },
+  {
+    id: 'executioner-varus', tier: 'B', name: 'Executioner Varus', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.55, pickRate: 0.16, winRate: 8.7, top4Rate: 49.2, setTag: 'TFTSet18',
+    earlyUnits: ['Ashe', 'Varus', 'Vi', 'Shen'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Kẹp sát thương tầm xa tuyến sau', carousel: 'Cung Gỗ > Kiếm B.F > Găng Đấu Sĩ',
+    augments: ['component_buffet', 'jeweled_lotus_2', 'pandoras_items'],
+    traits: [{ name: 'Hunter', count: 3, style: 'silver' }, { name: 'Vanguard', count: 3, style: 'silver' }],
+    units: [
+      { key: 'Varus', name: 'Varus', cost: 2, star: 3, row: 3, col: 6, items: ['guinsoo', 'ie', 'lw'] },
+      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 2, items: ['bt', 'titans'] },
+      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 1, items: [] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 2, items: [] }
+    ]
+  },
+  {
+    id: 'rapidfire-ashe', tier: 'B', name: 'Rapidfire Strikers', playstyle: 'Fast 8', difficulty: 'Easy', avgPlace: 4.58, pickRate: 0.13, winRate: 7.5, top4Rate: 48.1, setTag: 'TFTSet18',
+    earlyUnits: ['Ashe', 'Vi', 'Alistar', 'Shen'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Đẩy tốc đánh toàn đội', carousel: 'Cung Gỗ > Kiếm B.F > Áo Choàng',
+    augments: ['cybernetic_bulk_2', 'prismatic_ticket', 'healing_orbs_2'],
+    traits: [{ name: 'Hunter', count: 4, style: 'gold' }, { name: 'Brawler', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 6, items: ['guinsoo', 'deathblade', 'runaan'] },
+      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 3, items: ['bt', 'qss'] },
+      { key: 'Kobuko', name: 'Kobuko', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 0, col: 2, items: [] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Gnar', name: 'Gnar', cost: 5, star: 2, row: 3, col: 1, items: [] }
+    ]
+  },
+  {
+    id: 'freljord-tank', tier: 'B', name: 'Freljord Glacial', playstyle: 'Fast 8', difficulty: 'Hard', avgPlace: 4.60, pickRate: 0.11, winRate: 6.8, top4Rate: 47.5, setTag: 'TFTSet18',
+    earlyUnits: ['Ashe', 'Amumu', 'Sejuani', 'Lissandra'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Khống chế diện rộng', carousel: 'Giáp Lưới > Nước Mắt > Đai Khổng Lồ',
+    augments: ['cybernetic_bulk_2', 'patient_study', 'pandoras_items'],
+    traits: [{ name: 'Vanguard', count: 4, style: 'silver' }, { name: 'Invoker', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Lillia', name: 'Lillia', cost: 4, star: 2, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'morello'] },
+      { key: 'Ornn', name: 'Ornn', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 4, items: ['gargoyle', 'redemption'] },
+      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 2, items: [] },
+      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'archangel'] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 1, col: 3, items: [] }
+    ]
+  },
+  {
+    id: 'hyper-roll-yordle', tier: 'C', name: 'Yordle Megamorph', playstyle: 'lvl 5', difficulty: 'Easy', avgPlace: 4.65, pickRate: 0.10, winRate: 6.2, top4Rate: 46.0, setTag: 'TFTSet18',
+    earlyUnits: ['Teemo', 'Tristana', 'Lulu', 'Poppy'], leveling: 'Hyper Roll ở Cấp 5 để gom tất cả tướng Yordle 1-2 tiền lên 3 sao', carousel: 'Găng Đấu Sĩ > Kiếm B.F > Gậy Quá Khổ',
+    augments: ['trade_sector', 'prismatic_ticket', 'jeweled_lotus_2'],
+    traits: [{ name: 'Sprykin', count: 4, style: 'gold' }, { name: 'Invoker', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 2, items: ['bluebuff', 'jeweled', 'nashor'] },
+      { key: 'Veigar', name: 'Veigar', cost: 3, star: 3, row: 3, col: 4, items: ['shojin', 'archangel'] },
+      { key: 'Krug', name: 'Krug', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
+      { key: 'Pebbles', name: 'Pebbles', cost: 1, star: 3, row: 0, col: 2, items: [] },
+      { key: 'Kobuko', name: 'Kobuko', cost: 2, star: 3, row: 0, col: 4, items: [] },
+      { key: 'Soraka', name: 'Soraka', cost: 3, star: 2, row: 3, col: 6, items: [] }
+    ]
+  },
+  {
+    id: 'demacia-elite', tier: 'C', name: 'Demacia Vanguard', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.70, pickRate: 0.08, winRate: 5.5, top4Rate: 45.2, setTag: 'TFTSet18',
+    earlyUnits: ['Lux', 'Jarvan', 'Sona', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Kích hoạt hệ Demacia thủ vững', carousel: 'Kiếm B.F > Giáp Lưới > Áo Choàng',
+    augments: ['vanguard_crest', 'cybernetic_bulk_2', 'component_buffet'],
+    traits: [{ name: 'Vanguard', count: 4, style: 'silver' }, { name: 'Defender', count: 2, style: 'bronze' }],
+    units: [
+      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 2, items: ['gargoyle', 'redemption'] },
+      { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'jeweled', 'gunblade'] },
+      { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 2, items: ['morello'] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 3, col: 4, items: [] }
     ]
   }
 ];
@@ -599,7 +781,7 @@ export default function MetaTFTApp() {
                   const isExpanded = !!expandedComps[comp.id];
                   const isCopied = copiedCompId === comp.id;
                   const teamCode = encodeTeamPlannerCode(comp.units, comp.setTag);
-                  const tierColors = { S: 'bg-[#ff6b6b] text-[#141518]', A: 'bg-[#feca57] text-[#141518]', B: 'bg-[#48dbfb] text-[#141518]' };
+                  const tierColors = { S: 'bg-[#ff6b6b] text-[#141518]', A: 'bg-[#feca57] text-[#141518]', B: 'bg-[#48dbfb] text-[#141518]', C: 'bg-[#a4b0be] text-[#141518]' };
 
                   return (
                     <div key={comp.id} className="bg-[#1e2328] border border-[#c89b3c]/20 rounded-sm overflow-hidden hover:border-[#c89b3c]/50 hover:shadow-[0_0_12px_rgba(200,155,60,0.15)] transition-all">
@@ -695,63 +877,4 @@ export default function MetaTFTApp() {
         )}
 
         {activeNav === 'builder' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-            <div className="lg:col-span-7 space-y-3">
-              <div className="bg-[#1e2328] border border-[#c89b3c]/30 p-3 rounded-sm flex flex-wrap items-center justify-between gap-2 shadow-md">
-                <span className="text-xs font-bold text-[#f0e6d2]">
-                  Đang chọn: <strong className="text-[#c89b3c] drop-shadow-sm">{selectedBuilderChamp.name}</strong> ({builderUnits.length}/10)
-                </span>
-                <button onClick={() => setBuilderUnits([])} className="px-2.5 py-1 rounded-sm bg-[#ff6b6b]/10 border border-[#ff6b6b]/30 text-xs text-[#ff6b6b] font-bold flex items-center gap-1 hover:bg-[#ff6b6b]/20 transition-colors">
-                  <Trash2 className="w-3.5 h-3.5" /> Xóa Bàn
-                </button>
-              </div>
-              <HoneycombBoard4x7 units={builderUnits} dynamicChampMap={dynamicChampMap} interactive={true} onCellClick={handleBuilderCellClick} />
-              <div className="bg-[#1e2328] border border-[#c89b3c]/30 p-3 rounded-sm space-y-2.5 shadow-md">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-mono text-xs text-[#c89b3c] bg-[#091428] px-3 py-1.5 rounded-sm border border-[#c89b3c]/20 flex-1 truncate shadow-inner">{builderPlannerCode}</div>
-                  <button onClick={() => { navigator.clipboard?.writeText(builderPlannerCode); triggerToast(`Đã copy mã: ${builderPlannerCode}`); }} className="px-3.5 py-1.5 rounded-sm bg-[#c89b3c] hover:bg-[#d4a84d] text-[#091428] font-extrabold text-xs flex items-center gap-1.5 shadow-lg tracking-wide transition-colors">
-                    <Copy className="w-3.5 h-3.5" /> Copy Mã
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <input type="text" value={importCodeInput} onChange={e => setImportCodeInput(e.target.value)} placeholder="Dán mã 01...TFTSet18 vào đây" className="flex-1 bg-[#091428] border border-[#c89b3c]/30 rounded-sm px-3 py-1.5 text-xs text-[#f0e6d2] outline-none focus:border-[#c89b3c] shadow-inner" />
-                  <button onClick={() => { const res = decodeTeamPlannerCode(importCodeInput); if (res?.units?.length) { setBuilderUnits(res.units); triggerToast(`Nạp ${res.units.length} tướng!`); } else triggerToast('Mã lỗi!'); }} className="px-4 py-1.5 rounded-sm bg-[#207ac7] hover:bg-[#288ced] text-xs font-bold text-[#f0e6d2] shadow-md transition-colors">
-                    Import Mã
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className="lg:col-span-5 bg-[#1e2328] border border-[#c89b3c]/30 p-3.5 rounded-sm shadow-md">
-              <div className="text-xs font-extrabold text-[#c89b3c] mb-3 tracking-wide drop-shadow-sm">Kho Tướng Mùa {currentSetNumber}</div>
-              <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-[460px] overflow-y-auto pr-1">
-                {CHAMPIONS_HEX_ROSTER.map(ch => (
-                  <div key={ch.key} onClick={() => setSelectedBuilderChamp(ch)} className={`p-1 rounded-sm border cursor-pointer transition-all ${selectedBuilderChamp.key === ch.key ? 'border-[#c89b3c] bg-[#c89b3c]/10 shadow-[0_0_8px_rgba(200,155,60,0.3)] scale-105' : 'border-transparent hover:bg-white/5'}`}>
-                    <ChampionPortraitTile unit={ch} dynamicChampMap={dynamicChampMap} size="sm" showName={false} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeNav === 'augments' && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-extrabold text-[#f0e6d2] tracking-tight drop-shadow-sm">Bảng Xếp Hạng Lõi Nâng Cấp (Set {currentSetNumber})</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {Object.keys(AUGMENTS_CATALOG).map(augKey => <AugmentBadge key={augKey} augId={augKey} compact={false} />)}
-            </div>
-          </div>
-        )}
-      </main>
-    </div>
-  );
-}
-
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
-      <MetaTFTApp />
-    </React.StrictMode>
-  );
-}
+          <div className="grid grid-cols-1 lg:grid-cols-1
