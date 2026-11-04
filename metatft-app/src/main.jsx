@@ -476,18 +476,18 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
 
   const currentImgUrl = candidateUrls[Math.min(fallbackStep, candidateUrls.length - 1)];
   const costBorders = { 1: 'border-[#788292]', 2: 'border-[#11b288]', 3: 'border-[#207ac7]', 4: 'border-[#c440da]', 5: 'border-[#ffb93b]' };
-  const sizeDims = { sm: 'w-9 h-9', md: 'w-12 h-12', lg: 'w-14 h-14' };
+  const sizeDims = { sm: 'w-10 h-10', md: 'w-[52px] h-[52px]', lg: 'w-14 h-14' };
   const info = lookupChamp(lowerKey);
   const cost = info?.cost || unit.cost || 3;
 
   return (
     <div onClick={onClick} className={`group flex flex-col items-center select-none ${onClick ? 'cursor-pointer' : ''}`}>
-      <div className="h-3.5 flex items-center justify-center">
+      <div className="h-3 flex items-center justify-center">
         {unit.star === 3 && <span className="text-[11px] leading-none text-[#fbbf24] font-black tracking-tighter drop-shadow-md">★★★</span>}
       </div>
 
       <div className="relative">
-        <div className={`relative ${sizeDims[size] || sizeDims.md} rounded-sm border-[2px] ${costBorders[cost] || costBorders[3]} bg-[#14171f] overflow-hidden shadow-lg`}>
+        <div className={`relative ${sizeDims[size] || sizeDims.md} rounded-md border-2 ${costBorders[cost] || costBorders[3]} bg-[#14171f] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,.55)]`}>
           <img
             src={currentImgUrl}
             alt={unit.name || unit.key}
@@ -497,11 +497,11 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
         </div>
 
         {unit.items && unit.items.length > 0 && (
-          <div className="absolute -bottom-1.5 inset-x-0 flex items-center justify-center gap-[1px] z-10">
+          <div className="absolute -bottom-2 inset-x-0 flex items-center justify-center gap-[2px] z-10">
             {unit.items.slice(0, 3).map((itemId, idx) => {
               const itemObj = ITEMS_CATALOG[ITEM_ALIAS[itemId] || itemId];
               return itemObj ? (
-                <img key={idx} src={itemObj.icon} alt={itemObj.name} title={itemObj.name} className="w-4 h-4 rounded-[2px] border border-[#1e2328] bg-slate-950 shadow-md" />
+                <img key={idx} src={itemObj.icon} alt={itemObj.name} title={itemObj.name} className="w-[18px] h-[18px] rounded-[3px] ring-1 ring-black/70 border border-[#c89b3c]/40 bg-slate-950 shadow-md" />
               ) : null;
             })}
           </div>
@@ -509,7 +509,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
       </div>
 
       {showName && (
-        <span className="mt-2 text-[10px] text-[#f0e6d2] font-semibold leading-none truncate max-w-[56px] text-center drop-shadow-sm">
+        <span className="mt-2 w-[62px] text-[11px] text-[#ece4d0] font-semibold leading-[1.15] clamp2 text-center">
           {info?.name || unit.name || unit.key}
         </span>
       )}
@@ -570,19 +570,19 @@ const TraitBadge = ({ trait, dynamicTraitMap }) => {
   const traitIconUrl = dynamicTraitMap?.[normAugName(viName)]?.iconUrl || dynamicTraitMap?.[normAugName(trait.name)]?.iconUrl || `https://c-tft-api.op.gg/img/set/18/tft-trait/Trait_Icon_18_${OPGG_TRAIT[trait.name] || trait.name.replace(/\s+/g, '')}.TFT_Set18.png`;
 
   const styles = {
-    gold: 'bg-[#332714] border-[#c89b3c] text-[#f5d17f]',
-    silver: 'bg-[#232730] border-[#8b9bb4] text-[#d8e1ef]',
-    bronze: 'bg-[#281d17] border-[#965d37] text-[#dfa885]'
+    gold: 'bg-gradient-to-b from-[#3a2d15] to-[#2a2010] border-[#c89b3c]/80 text-[#f7dc98]',
+    silver: 'bg-gradient-to-b from-[#2a2f39] to-[#1f232b] border-[#8b9bb4]/80 text-[#e3eaf5]',
+    bronze: 'bg-gradient-to-b from-[#2e211a] to-[#221813] border-[#965d37]/80 text-[#e6b693]'
   };
 
   return (
-    <div title={viName} className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm border text-[11px] font-bold shadow-sm ${styles[trait.style] || styles.bronze}`}>
+    <div title={viName} className={`inline-flex items-center gap-1.5 pl-1.5 pr-2 py-[3px] rounded-md border text-[12px] leading-none font-semibold ${styles[trait.style] || styles.bronze}`}>
       {!iconErr ? (
-        <img src={traitIconUrl} alt={trait.name} onError={() => setIconErr(true)} className="w-3.5 h-3.5 object-contain brightness-125 drop-shadow-sm" />
+        <img src={traitIconUrl} alt={trait.name} onError={() => setIconErr(true)} className="w-4 h-4 object-contain" />
       ) : (
         <span className="text-[9px]">◆</span>
       )}
-      <span className="drop-shadow-sm">{trait.count} {viName}</span>
+      <span><b className="font-extrabold mr-0.5">{trait.count}</b>{viName}</span>
     </div>
   );
 };
@@ -648,26 +648,34 @@ export default function MetaTFTApp() {
   const builderPlannerCode = useMemo(() => encodeTeamPlannerCode(builderUnits, 'TFTSet18'), [builderUnits]);
 
   return (
-    <div className="min-h-screen bg-[#0a1428] text-[#f0e6d2] flex flex-col font-sans antialiased">
+    <div className="min-h-screen bg-[#0a1428] text-[#f0e6d2] flex flex-col app-root antialiased">
       <style>{`
-        body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-        .team-title { font-weight: 800; letter-spacing: -0.01em; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #c89b3c; border-radius: 4px; }
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
+        .app-root { font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-feature-settings: 'tnum' 1; }
+        .app-root img { image-rendering: auto; backface-visibility: hidden; transform: translateZ(0); }
+        .team-title { font-weight: 700; letter-spacing: -0.005em; }
+        .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .comp-card { background: linear-gradient(180deg, #20262d 0%, #1a1f26 100%); box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 6px 18px -10px rgba(0,0,0,.7); transition: border-color .15s, transform .15s, box-shadow .15s; }
+        .comp-card:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 12px 26px -12px rgba(0,0,0,.85); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3a3f48; border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c89b3c; }
       `}</style>
 
       {toast && (
-        <div className="fixed top-16 right-5 z-50 bg-[#1e2328] border border-[#c89b3c] text-[#f0e6d2] px-4 py-2.5 rounded-sm shadow-lg flex items-center gap-2 text-xs font-bold animate-bounce">
+        <div className="fixed top-16 right-5 z-50 bg-[#1e2328] border border-[#c89b3c] text-[#f0e6d2] px-4 py-2.5 rounded-sm shadow-lg flex items-center gap-2 text-xs font-bold">
           <CheckCircle2 className="w-4 h-4 text-[#c89b3c]" />
           <span>{toast}</span>
         </div>
       )}
 
-      <header className="bg-[#091428] border-b border-[#c89b3c]/40 sticky top-0 z-40 shadow-lg">
+      <header className="bg-[#091428]/90 backdrop-blur-md border-b border-[#c89b3c]/30 sticky top-0 z-40 shadow-[0_8px_24px_-12px_rgba(0,0,0,.8)]">
         <div className="max-w-[1340px] mx-auto px-4 h-14 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 shrink-0">
             <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Spatula.png" alt="Spatula" className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-md shrink-0" />
-            <span className="font-extrabold text-base sm:text-xl text-[#f0e6d2] tracking-wider whitespace-nowrap">Brown's Meta Book</span>
+            <span className="font-bold text-base sm:text-lg text-[#f4ecd8] tracking-wide whitespace-nowrap">Brown's Meta Book</span>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
             {[
@@ -678,7 +686,7 @@ export default function MetaTFTApp() {
               <button
                 key={tab.id}
                 onClick={() => setActiveNav(tab.id)}
-                className={`px-3 py-1.5 rounded-sm text-xs font-bold transition-all border tracking-wide ${
+                className={`px-3.5 py-1.5 rounded-md text-[13px] font-semibold transition-all border ${
                   activeNav === tab.id ? 'bg-[#1e2328] text-[#c89b3c] border-[#c89b3c]/80' : 'bg-transparent text-[#a09b8c] border-transparent hover:text-[#f0e6d2]'
                 }`}
               >
@@ -694,15 +702,15 @@ export default function MetaTFTApp() {
           <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
               <div>
-                <h1 className="text-xl sm:text-2xl font-extrabold text-[#f0e6d2] tracking-tight">Meta Team Comps Tier List ({compsList.length} Đội Hình)</h1>
-                <p className="text-[11px] text-[#a09b8c] mt-1">Nguồn: {COMPS_SOURCE}</p>
+                <h1 className="text-xl sm:text-2xl font-bold text-[#f4ecd8] tracking-tight">Meta Team Comps Tier List ({compsList.length} Đội Hình)</h1>
+                <p className="text-[12px] text-[#b9b3a3] mt-1">Nguồn: {COMPS_SOURCE}</p>
               </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Tìm đội hình, tướng..."
-                className="bg-[#1e2328] border border-[#c89b3c]/30 rounded-sm px-3 py-1.5 text-xs text-[#f0e6d2] outline-none w-64 focus:border-[#c89b3c]"
+                className="bg-[#1e2328] border border-[#c89b3c]/30 rounded-md px-3 py-2 text-[13px] text-[#f0e6d2] outline-none w-64 focus:border-[#c89b3c] placeholder:text-[#7d786b]"
               />
             </div>
 
@@ -713,20 +721,20 @@ export default function MetaTFTApp() {
                   const isExpanded = !!expandedComps[comp.id];
                   const isCopied = copiedCompId === comp.id;
                   const teamCode = encodeTeamPlannerCode(comp.units, comp.setTag);
-                  const tierColors = { OP: 'bg-[#ff3b5c] text-white', D: 'bg-[#8395a7] text-[#141518]', S: 'bg-[#ff6b6b] text-[#141518]', A: 'bg-[#feca57] text-[#141518]', B: 'bg-[#48dbfb] text-[#141518]', C: 'bg-[#a4b0be] text-[#141518]' };
+                  const tierColors = { OP: 'bg-gradient-to-b from-[#ff5a78] to-[#e0264a] text-white', D: 'bg-gradient-to-b from-[#9aabbd] to-[#74869a] text-[#141518]', S: 'bg-gradient-to-b from-[#ff8585] to-[#f05a5a] text-[#1a0d0d]', A: 'bg-gradient-to-b from-[#ffd979] to-[#f5b92f] text-[#1f1705]', B: 'bg-gradient-to-b from-[#6fe3ff] to-[#2fbfe6] text-[#06222b]', C: 'bg-gradient-to-b from-[#bcc6d3] to-[#97a3b3] text-[#141518]' };
 
                   return (
-                    <div key={comp.id} className="bg-[#1e2328] border border-[#c89b3c]/20 rounded-sm overflow-hidden hover:border-[#c89b3c]/50 transition-all">
+                    <div key={comp.id} className="comp-card border border-white/[0.07] rounded-lg overflow-hidden hover:border-[#c89b3c]/50">
                       <div onClick={(e) => toggleCompDetails(comp.id, e)} className="p-3 sm:px-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer">
                         <div className="flex items-center gap-3 lg:w-[220px] shrink-0">
-                          <div className={`w-8 h-8 rounded-[3px] flex items-center justify-center font-black text-base shadow-sm ${tierColors[comp.tier] || tierColors.S}`}>
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-[17px] ring-1 ring-white/20 shadow-[0_3px_10px_-2px_rgba(0,0,0,.6)] ${tierColors[comp.tier] || tierColors.S}`}>
                             {comp.tier}
                           </div>
                           <div>
-                            <div className="team-title text-[15px] text-white leading-tight">{comp.name}</div>
+                            <div className="team-title text-[16px] text-white leading-snug">{comp.name}</div>
                             <div className="flex items-center gap-1.5 mt-1.5">
-                              <span className="px-2 py-0.5 rounded-sm text-[10px] font-bold border bg-[#091428] text-[#5bc0de] border-[#31708f]">{comp.playstyle}</span>
-                              <span className="px-2 py-0.5 rounded-sm text-[10px] font-bold border bg-[#192e22] text-[#4cae4c] border-[#2b542c]">{comp.difficulty}</span>
+                              <span className="px-2 py-[3px] rounded-md text-[11px] font-semibold border bg-[#0b1a33] text-[#7dd3f0] border-[#31708f]/80">{comp.playstyle}</span>
+                              <span className="px-2 py-[3px] rounded-md text-[11px] font-semibold border bg-[#14291d] text-[#6fd16f] border-[#2b542c]">{comp.difficulty}</span>
                             </div>
                           </div>
                         </div>
@@ -748,23 +756,23 @@ export default function MetaTFTApp() {
 
                         <div className="flex flex-col sm:flex-row lg:flex-col items-end justify-between gap-2.5 lg:w-[340px] shrink-0 border-t lg:border-t-0 border-white/5 pt-2.5 lg:pt-0">
                           <div className="flex items-center gap-1.5 self-end">
-                            <button onClick={(e) => handleCopyTeamCode(comp, e)} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-sm text-[11px] font-extrabold border transition-all ${isCopied ? 'bg-[#11b288] text-white border-[#11b288]' : 'bg-[#091428] hover:bg-[#c89b3c] text-[#c89b3c] border-[#c89b3c]/50'}`}>
+                            <button onClick={(e) => handleCopyTeamCode(comp, e)} className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-bold border transition-all ${isCopied ? 'bg-[#11b288] text-white border-[#11b288]' : 'bg-[#091428] hover:bg-[#c89b3c] text-[#c89b3c] border-[#c89b3c]/50'}`}>
                               {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                               <span>{isCopied ? 'Đã Copy!' : 'Copy Mã'}</span>
                             </button>
-                            <button onClick={(e) => handleOpenInBuilder(comp, e)} className="flex items-center gap-1 px-2 py-1.5 rounded-sm text-[11px] font-bold bg-[#091428] hover:bg-[#207ac7] text-[#a09b8c] hover:text-white border border-white/10">
+                            <button onClick={(e) => handleOpenInBuilder(comp, e)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[12px] font-semibold bg-[#0b1a33] hover:bg-[#207ac7] text-[#c9c3b3] hover:text-white border border-white/10 transition-colors">
                               <Wrench className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Sửa Bài</span>
                             </button>
-                            <button onClick={(e) => toggleCompDetails(comp.id, e)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-sm text-[11px] font-bold border bg-[#091428] text-[#a09b8c] border-white/10">
+                            <button onClick={(e) => toggleCompDetails(comp.id, e)} className="flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-semibold border bg-[#0b1a33] text-[#c9c3b3] border-white/10 hover:text-white transition-colors">
                               <span>{isExpanded ? 'Thu gọn' : 'Chi tiết'}</span>
                               {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                           </div>
-                          <div className="grid grid-cols-4 gap-3 text-center tabular-nums w-full">
-                            <div><div className="text-sm font-extrabold text-[#11b288]">{comp.avgPlace.toFixed(2)}</div><div className="text-[10px] text-[#a09b8c]">Hạng trung bình</div></div>
-                            <div><div className="text-sm font-extrabold text-[#f0e6d2]">{comp.pickRate.toFixed(2)}%</div><div className="text-[10px] text-[#a09b8c]">Tỷ lệ chọn</div></div>
-                            <div><div className="text-sm font-extrabold text-[#ff6b6b]">{comp.winRate.toFixed(1)}%</div><div className="text-[10px] text-[#a09b8c]">Tỷ lệ thắng</div></div>
-                            <div><div className="text-sm font-extrabold text-[#11b288]">{comp.top4Rate.toFixed(1)}%</div><div className="text-[10px] text-[#a09b8c]">Tỷ lệ Top 4</div></div>
+                          <div className="grid grid-cols-4 gap-3 text-center tabular-nums w-full pt-1">
+                            <div><div className="text-[15px] font-bold text-[#2fd3a6]">{comp.avgPlace.toFixed(2)}</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap">Hạng trung bình</div></div>
+                            <div><div className="text-[15px] font-bold text-[#f4ecd8]">{comp.pickRate.toFixed(2)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap">Tỷ lệ chọn</div></div>
+                            <div><div className="text-[15px] font-bold text-[#ff7a7a]">{comp.winRate.toFixed(1)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap">Tỷ lệ thắng</div></div>
+                            <div><div className="text-[15px] font-bold text-[#2fd3a6]">{comp.top4Rate.toFixed(1)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap">Tỷ lệ Top 4</div></div>
                           </div>
                         </div>
                       </div>
