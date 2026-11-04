@@ -465,9 +465,9 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
     const list = [];
     const info0 = lookupChamp(lowerKey);
     const dk = info0 ? info0.key.toLowerCase() : lowerKey;
-    if (dynamicChampMap && dynamicChampMap[dk]?.iconUrl) list.push(dynamicChampMap[dk].iconUrl); // CDragon trước
-    if (info0?.img) list.push(info0.img); // metatft.gg nếu CDragon chưa có
+    if (info0?.img) list.push(info0.img); // metatft.gg trước: ổn định, không bị đổi nguồn giữa chừng
     if (info0?.opgg) list.push(info0.opgg);
+    if (dynamicChampMap && dynamicChampMap[dk]?.iconUrl) list.push(dynamicChampMap[dk].iconUrl);
     list.push(`https://cdn.metatft.com/file/metatft/champions/da_18_${lowerKey}.png`);
     list.push(`https://cdn.metatft.com/file/metatft/champions/tft18_${lowerKey}.png`);
     list.push(`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${cleanKey}.png`);
@@ -476,7 +476,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
 
   const currentImgUrl = candidateUrls[Math.min(fallbackStep, candidateUrls.length - 1)];
   const costBorders = { 1: 'border-[#788292]', 2: 'border-[#11b288]', 3: 'border-[#207ac7]', 4: 'border-[#c440da]', 5: 'border-[#ffb93b]' };
-  const sizeDims = { sm: 'w-10 h-10', md: 'w-[52px] h-[52px]', lg: 'w-14 h-14' };
+  const sizeDims = { sm: 'w-10 h-10', md: 'w-11 h-11 sm:w-[52px] sm:h-[52px]', lg: 'w-14 h-14' };
   const info = lookupChamp(lowerKey);
   const cost = info?.cost || unit.cost || 3;
 
@@ -490,6 +490,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
         <div className={`relative ${sizeDims[size] || sizeDims.md} rounded-md border-2 ${costBorders[cost] || costBorders[3]} bg-[#14171f] overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,.55)]`}>
           <img
             src={currentImgUrl}
+            loading="lazy" decoding="async"
             alt={unit.name || unit.key}
            onError={() => setFallbackStep((s) => s + 1)}
             className="w-full h-full object-cover object-center"
@@ -501,7 +502,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
             {unit.items.slice(0, 3).map((itemId, idx) => {
               const itemObj = ITEMS_CATALOG[ITEM_ALIAS[itemId] || itemId];
               return itemObj ? (
-                <img key={idx} src={itemObj.icon} alt={itemObj.name} title={itemObj.name} className="w-[18px] h-[18px] rounded-[3px] ring-1 ring-black/70 border border-[#c89b3c]/40 bg-slate-950 shadow-md" />
+                <img key={idx} src={itemObj.icon} alt={itemObj.name} title={itemObj.name} className="w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-[3px] ring-1 ring-black/70 border border-[#c89b3c]/40 bg-slate-950 shadow-md" />
               ) : null;
             })}
           </div>
@@ -509,7 +510,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
       </div>
 
       {showName && (
-        <span className="mt-2 w-[62px] text-[11px] text-[#ece4d0] font-semibold leading-[1.15] clamp2 text-center">
+        <span className="mt-1.5 sm:mt-2 w-[50px] sm:w-[62px] text-[10px] sm:text-[11px] text-[#ece4d0] font-semibold leading-[1.15] clamp2 text-center">
           {info?.name || unit.name || unit.key}
         </span>
       )}
@@ -564,10 +565,12 @@ const HoneycombBoard4x7 = ({ units = [], dynamicChampMap, interactive = false, o
 };
 
 const TraitBadge = ({ trait, dynamicTraitMap }) => {
-  const [iconErr, setIconErr] = useState(false);
+  const [tStep, setTStep] = useState(0);
   const viName = TRAIT_VI[trait.name] || trait.name;
   const cleanTrait = trait.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const traitIconUrl = dynamicTraitMap?.[normAugName(viName)]?.iconUrl || dynamicTraitMap?.[normAugName(trait.name)]?.iconUrl || `https://c-tft-api.op.gg/img/set/18/tft-trait/Trait_Icon_18_${OPGG_TRAIT[trait.name] || trait.name.replace(/\s+/g, '')}.TFT_Set18.png`;
+  const traitUrls = [`https://c-tft-api.op.gg/img/set/18/tft-trait/Trait_Icon_18_${OPGG_TRAIT[trait.name] || trait.name.replace(/\s+/g, '')}.TFT_Set18.png`, dynamicTraitMap?.[normAugName(viName)]?.iconUrl, dynamicTraitMap?.[normAugName(trait.name)]?.iconUrl].filter(Boolean);
+  const traitIconUrl = traitUrls[tStep];
+  const iconErr = tStep >= traitUrls.length;
 
   const styles = {
     gold: 'bg-gradient-to-b from-[#3a2d15] to-[#2a2010] border-[#c89b3c]/80 text-[#f7dc98]',
@@ -576,9 +579,9 @@ const TraitBadge = ({ trait, dynamicTraitMap }) => {
   };
 
   return (
-    <div title={viName} className={`inline-flex items-center gap-1.5 pl-1.5 pr-2 py-[3px] rounded-md border text-[12px] leading-none font-semibold ${styles[trait.style] || styles.bronze}`}>
+    <div title={viName} className={`inline-flex items-center gap-1 sm:gap-1.5 pl-1 sm:pl-1.5 pr-1.5 sm:pr-2 py-[3px] rounded-md border text-[11px] sm:text-[12px] leading-none font-semibold ${styles[trait.style] || styles.bronze}`}>
       {!iconErr ? (
-        <img src={traitIconUrl} alt={trait.name} onError={() => setIconErr(true)} className="w-4 h-4 object-contain" />
+        <img src={traitIconUrl} alt={trait.name} loading="lazy" decoding="async" width="16" height="16" onError={() => setTStep((n) => n + 1)} className="w-3.5 h-3.5 sm:w-4 sm:h-4 object-contain" />
       ) : (
         <span className="text-[9px]">◆</span>
       )}
@@ -614,8 +617,23 @@ export default function MetaTFTApp() {
 
   useEffect(() => {
     let alive = true;
+    if (activeNav === 'comps') return undefined; // tab đội hình dùng ảnh nhẹ từ metatft/op.gg, không tải 2 file JSON CDragon lớn
     loadCDragon().then((o) => { if (alive) { setDynamicChampMap(o.champ); setDynamicTraitMap(o.trait); } });
     return () => { alive = false; };
+  }, [activeNav]);
+
+  // nạp phông không chặn render + khai báo vùng an toàn/màu thanh trạng thái cho điện thoại
+  useEffect(() => {
+    const l = document.createElement('link');
+    l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap';
+    document.head.appendChild(l);
+    let m = document.querySelector('meta[name="theme-color"]');
+    if (!m) { m = document.createElement('meta'); m.name = 'theme-color'; document.head.appendChild(m); }
+    m.content = '#091428';
+    const v = document.querySelector('meta[name="viewport"]');
+    if (v && !/viewport-fit/.test(v.content)) v.content += ', viewport-fit=cover';
+    return () => { l.remove(); };
   }, []);
 
   const triggerToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3200); };
@@ -650,13 +668,12 @@ export default function MetaTFTApp() {
   return (
     <div className="min-h-screen bg-[#0a1428] text-[#f0e6d2] flex flex-col app-root antialiased">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap');
         .app-root { font-family: 'Be Vietnam Pro', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; text-rendering: optimizeLegibility; font-feature-settings: 'tnum' 1; }
-        .app-root img { image-rendering: auto; backface-visibility: hidden; transform: translateZ(0); }
+        html, body { background: #0a1428; margin: 0; overscroll-behavior-y: none; }
         .team-title { font-weight: 700; letter-spacing: -0.005em; }
         .clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .comp-card { background: linear-gradient(180deg, #20262d 0%, #1a1f26 100%); box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 6px 18px -10px rgba(0,0,0,.7); transition: border-color .15s, transform .15s, box-shadow .15s; }
-        .comp-card:hover { transform: translateY(-1px); box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 12px 26px -12px rgba(0,0,0,.85); }
+        .comp-card { background: linear-gradient(180deg, #20262d 0%, #1a1f26 100%); box-shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 6px 18px -10px rgba(0,0,0,.7); content-visibility: auto; contain-intrinsic-size: auto 230px; }
+        @media (hover: hover) { .comp-card:hover { border-color: rgba(200,155,60,.5); } }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -671,13 +688,13 @@ export default function MetaTFTApp() {
         </div>
       )}
 
-      <header className="bg-[#091428]/90 backdrop-blur-md border-b border-[#c89b3c]/30 sticky top-0 z-40 shadow-[0_8px_24px_-12px_rgba(0,0,0,.8)]">
-        <div className="max-w-[1340px] mx-auto px-4 h-14 flex items-center justify-between gap-3">
+      <header className="bg-[#091428] border-b border-[#c89b3c]/30 sticky top-0 z-40 pt-[env(safe-area-inset-top)] shadow-[0_6px_16px_-10px_rgba(0,0,0,.8)]">
+        <div className="max-w-[1340px] mx-auto px-3 sm:px-4 py-2 sm:py-0 sm:h-14 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
           <div className="flex items-center gap-2.5 shrink-0">
-            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Spatula.png" alt="Spatula" className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-md shrink-0" />
-            <span className="font-bold text-base sm:text-lg text-[#f4ecd8] tracking-wide whitespace-nowrap">Brown's Meta Book</span>
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Spatula.png" alt="Spatula" className="w-6 h-6 sm:w-8 sm:h-8 shrink-0" />
+            <span className="font-bold text-[15px] sm:text-lg text-[#f4ecd8] tracking-wide whitespace-nowrap">Brown's Meta Book</span>
           </div>
-          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
+          <div className="grid grid-cols-3 sm:flex items-center gap-1 sm:gap-2 w-full sm:w-auto p-0.5 sm:p-0 rounded-lg bg-black/20 sm:bg-transparent">
             {[
               { id: 'comps', label: 'Tier List & Lõi' },
               { id: 'builder', label: 'Team Builder' },
@@ -686,7 +703,7 @@ export default function MetaTFTApp() {
               <button
                 key={tab.id}
                 onClick={() => setActiveNav(tab.id)}
-                className={`px-3.5 py-1.5 rounded-md text-[13px] font-semibold transition-all border ${
+                className={`px-2 sm:px-3.5 py-1.5 rounded-md text-[12px] sm:text-[13px] font-semibold text-center whitespace-nowrap transition-all border ${
                   activeNav === tab.id ? 'bg-[#1e2328] text-[#c89b3c] border-[#c89b3c]/80' : 'bg-transparent text-[#a09b8c] border-transparent hover:text-[#f0e6d2]'
                 }`}
               >
@@ -697,24 +714,24 @@ export default function MetaTFTApp() {
         </div>
       </header>
 
-      <main className="max-w-[1340px] w-full mx-auto px-4 py-5 flex-1 space-y-4">
+      <main className="max-w-[1340px] w-full mx-auto px-2.5 sm:px-4 py-3 sm:py-5 flex-1 space-y-3 sm:space-y-4">
         {activeNav === 'comps' && (
           <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-[#f4ecd8] tracking-tight">Meta Team Comps Tier List ({compsList.length} Đội Hình)</h1>
-                <p className="text-[12px] text-[#b9b3a3] mt-1">Nguồn: {COMPS_SOURCE}</p>
+                <h1 className="text-[17px] sm:text-2xl font-bold text-[#f4ecd8] tracking-tight leading-snug">Meta Team Comps Tier List ({compsList.length} Đội Hình)</h1>
+                <p className="text-[11px] sm:text-[12px] text-[#b9b3a3] mt-1">Nguồn: {COMPS_SOURCE}</p>
               </div>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Tìm đội hình, tướng..."
-                className="bg-[#1e2328] border border-[#c89b3c]/30 rounded-md px-3 py-2 text-[13px] text-[#f0e6d2] outline-none w-64 focus:border-[#c89b3c] placeholder:text-[#7d786b]"
+                className="bg-[#1e2328] border border-[#c89b3c]/30 rounded-md px-3 py-2 text-[13px] text-[#f0e6d2] outline-none w-full sm:w-64 focus:border-[#c89b3c] placeholder:text-[#7d786b]"
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2 sm:space-y-3">
               {compsList
                 .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.units.some(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())))
                 .map(comp => {
@@ -725,25 +742,25 @@ export default function MetaTFTApp() {
 
                   return (
                     <div key={comp.id} className="comp-card border border-white/[0.07] rounded-lg overflow-hidden hover:border-[#c89b3c]/50">
-                      <div onClick={(e) => toggleCompDetails(comp.id, e)} className="p-3 sm:px-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer">
-                        <div className="flex items-center gap-3 lg:w-[220px] shrink-0">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-extrabold text-[17px] ring-1 ring-white/20 shadow-[0_3px_10px_-2px_rgba(0,0,0,.6)] ${tierColors[comp.tier] || tierColors.S}`}>
+                      <div onClick={(e) => toggleCompDetails(comp.id, e)} className="p-2.5 sm:p-3 sm:px-4 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 lg:gap-4 cursor-pointer">
+                        <div className="flex items-center gap-2.5 sm:gap-3 lg:w-[220px] shrink-0">
+                          <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center font-extrabold text-[15px] sm:text-[17px] ring-1 ring-white/20 shadow-[0_3px_10px_-2px_rgba(0,0,0,.6)] ${tierColors[comp.tier] || tierColors.S}`}>
                             {comp.tier}
                           </div>
                           <div>
-                            <div className="team-title text-[16px] text-white leading-snug">{comp.name}</div>
-                            <div className="flex items-center gap-1.5 mt-1.5">
+                            <div className="team-title text-[15px] sm:text-[16px] text-white leading-snug">{comp.name}</div>
+                            <div className="flex items-center gap-1.5 mt-1">
                               <span className="px-2 py-[3px] rounded-md text-[11px] font-semibold border bg-[#0b1a33] text-[#7dd3f0] border-[#31708f]/80">{comp.playstyle}</span>
                               <span className="px-2 py-[3px] rounded-md text-[11px] font-semibold border bg-[#14291d] text-[#6fd16f] border-[#2b542c]">{comp.difficulty}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex-1 flex flex-col gap-1.5 min-w-0">
-                          <div className="flex flex-wrap items-center gap-1.5">
+                        <div className="flex-1 flex flex-col gap-1.5 sm:gap-2 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
                             {comp.traits.map((tr, idx) => <TraitBadge key={idx} trait={tr} dynamicTraitMap={dynamicTraitMap} />)}
                           </div>
-                          <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5">
+                          <div className="flex items-start gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-2 pt-0.5 -mx-1 px-1">
                             {comp.units.map((u, idx) => <ChampionPortraitTile key={idx} unit={u} dynamicChampMap={dynamicChampMap} />)}
                           </div>
                           {(comp.augments || []).length > 0 && <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/5">
@@ -754,9 +771,9 @@ export default function MetaTFTApp() {
                           </div>}
                         </div>
 
-                        <div className="flex flex-col sm:flex-row lg:flex-col items-end justify-between gap-2.5 lg:w-[340px] shrink-0 border-t lg:border-t-0 border-white/5 pt-2.5 lg:pt-0">
-                          <div className="flex items-center gap-1.5 self-end">
-                            <button onClick={(e) => handleCopyTeamCode(comp, e)} className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[12px] font-bold border transition-all ${isCopied ? 'bg-[#11b288] text-white border-[#11b288]' : 'bg-[#091428] hover:bg-[#c89b3c] text-[#c89b3c] border-[#c89b3c]/50'}`}>
+                        <div className="flex flex-col sm:flex-row lg:flex-col items-stretch lg:items-end justify-between gap-2 sm:gap-2.5 lg:w-[340px] shrink-0 border-t lg:border-t-0 border-white/5 pt-2 lg:pt-0">
+                          <div className="flex items-center gap-1.5 sm:self-end order-2 sm:order-none">
+                            <button onClick={(e) => handleCopyTeamCode(comp, e)} className={`flex items-center gap-1 flex-1 sm:flex-none justify-center px-3 py-1.5 rounded-md text-[12px] font-bold border transition-all ${isCopied ? 'bg-[#11b288] text-white border-[#11b288]' : 'bg-[#091428] hover:bg-[#c89b3c] text-[#c89b3c] border-[#c89b3c]/50'}`}>
                               {isCopied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                               <span>{isCopied ? 'Đã Copy!' : 'Copy Mã'}</span>
                             </button>
@@ -768,17 +785,17 @@ export default function MetaTFTApp() {
                               {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
                           </div>
-                          <div className="grid grid-cols-4 gap-3 text-center tabular-nums w-full pt-1">
-                            <div><div className="text-[15px] font-bold text-[#2fd3a6]">{comp.avgPlace.toFixed(2)}</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap">Hạng trung bình</div></div>
-                            <div><div className="text-[15px] font-bold text-[#f4ecd8]">{comp.pickRate.toFixed(2)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap">Tỷ lệ chọn</div></div>
-                            <div><div className="text-[15px] font-bold text-[#ff7a7a]">{comp.winRate.toFixed(1)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap">Tỷ lệ thắng</div></div>
-                            <div><div className="text-[15px] font-bold text-[#2fd3a6]">{comp.top4Rate.toFixed(1)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap">Tỷ lệ Top 4</div></div>
+                          <div className="grid grid-cols-4 gap-1 sm:gap-3 text-center tabular-nums w-full rounded-md bg-black/20 sm:bg-transparent py-1.5 sm:py-0 sm:pt-1">
+                            <div><div className="text-[14px] sm:text-[15px] font-bold text-[#2fd3a6]">{comp.avgPlace.toFixed(2)}</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap"><span className="sm:hidden">Hạng TB</span><span className="hidden sm:inline">Hạng trung bình</span></div></div>
+                            <div><div className="text-[14px] sm:text-[15px] font-bold text-[#f4ecd8]">{comp.pickRate.toFixed(2)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap"><span className="sm:hidden">Chọn</span><span className="hidden sm:inline">Tỷ lệ chọn</span></div></div>
+                            <div><div className="text-[14px] sm:text-[15px] font-bold text-[#ff7a7a]">{comp.winRate.toFixed(1)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap"><span className="sm:hidden">Thắng</span><span className="hidden sm:inline">Tỷ lệ thắng</span></div></div>
+                            <div><div className="text-[14px] sm:text-[15px] font-bold text-[#2fd3a6]">{comp.top4Rate.toFixed(1)}%</div><div className="text-[11px] text-[#b9b3a3] mt-0.5 whitespace-nowrap"><span className="sm:hidden">Top 4</span><span className="hidden sm:inline">Tỷ lệ Top 4</span></div></div>
                           </div>
                         </div>
                       </div>
 
                       {isExpanded && (
-                        <div className="bg-[#091428] border-t border-[#c89b3c]/20 p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div className="bg-[#091428] border-t border-[#c89b3c]/20 p-2.5 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4">
                           <div className="lg:col-span-7 space-y-3">
                             <HoneycombBoard4x7 units={comp.units} dynamicChampMap={dynamicChampMap} />
                             <div className="bg-[#1e2328] border border-[#c89b3c]/40 rounded-sm p-3 flex items-center justify-between gap-3">
