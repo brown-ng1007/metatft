@@ -2,17 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ReactDOM from 'react-dom/client';
 import {
   Search, Wrench, ChevronDown, ChevronUp, Copy, Check, RefreshCw,
-  Trash2, CheckCircle2, Radio, Sparkles, Pin
+  Trash2, CheckCircle2, Radio, Sparkles
 } from 'lucide-react';
 
 const CDRAGON_TFT_JSON = 'https://raw.communitydragon.org/latest/cdragon/tft/en_us.json';
 
 function resolveCDragonAssetUrl(texPath) {
   if (!texPath) return '';
-  const cleaned = texPath
-    .toLowerCase()
-    .replace(/\.tex$/, '.png')
-    .replace(/^assets\//, 'assets/');
+  const cleaned = texPath.toLowerCase().replace(/\.tex$/, '.png').replace(/^assets\//, 'assets/');
   return `https://raw.communitydragon.org/latest/game/${cleaned}`;
 }
 
@@ -264,7 +261,7 @@ const FALLBACK_SET18_COMPS = [
 
 const AugmentBadge = ({ augId, compact = false }) => {
   const [imgErr, setImgErr] = useState(false);
-  const aug = AUGMENTS_CATALOG[augId] || { id: augId, name: augId, tier: 'Gold', avgPlace: 3.9, desc: 'Lõi nâng cấp đề xuất trong Meta.' };
+  const aug = AUGMENTS_CATALOG[augId] || { id: augId, name: augId, tier: 'Gold', avgPlace: 3.9, desc: 'Lõi nâng cấp đề xuất trong Meta.', icon: '' };
 
   const tierStyles = {
     Prismatic: 'bg-gradient-to-r from-fuchsia-950/80 via-indigo-950/80 to-cyan-950/80 border-fuchsia-400/60 text-fuchsia-200',
@@ -274,8 +271,7 @@ const AugmentBadge = ({ augId, compact = false }) => {
 
   if (compact) {
     return (
-      <div title={`${aug.name} — ${aug.desc} (Avg Place: #${aug.avgPlace})`} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
-        {/* HIỂN THỊ ĐÚNG ẢNH ICON THẬT CỦA LÕI TỪ COMMUNITYDRAGON */}
+      <div title={`${aug.name} — ${aug.desc}`} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
         {!imgErr && aug.icon ? (
           <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-4 h-4 rounded-[2px] object-cover shrink-0 drop-shadow-sm" />
         ) : (
@@ -285,26 +281,6 @@ const AugmentBadge = ({ augId, compact = false }) => {
       </div>
     );
   }
-
-  return (
-    <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
-      <div className="w-9 h-9 rounded-sm bg-black/50 border border-white/20 shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
-        {!imgErr && aug.icon ? (
-          <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-full h-full object-cover" />
-        ) : (
-          <Sparkles className="w-4 h-4 text-amber-300" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-extrabold text-white truncate drop-shadow-sm">{aug.name}</span>
-          <span className="text-[10px] font-black text-emerald-400 shrink-0">#{aug.avgPlace} Avg</span>
-        </div>
-        <p className="text-[11px] text-gray-300/90 mt-0.5 leading-snug">{aug.desc}</p>
-      </div>
-    </div>
-  );
-};
 
   return (
     <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
@@ -469,10 +445,7 @@ export default function MetaTFTApp() {
 
   const toggleCompDetails = (compId, e) => {
     if (e) e.stopPropagation();
-    setExpandedComps(prev => ({
-      ...prev,
-      [compId]: !prev[compId]
-    }));
+    setExpandedComps(prev => ({ ...prev, [compId]: !prev[compId] }));
   };
 
   useEffect(() => {
@@ -551,16 +524,8 @@ export default function MetaTFTApp() {
           text-rendering: optimizeLegibility !important;
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
-        img {
-          image-rendering: auto;
-        }
-        /* Cải thiện độ sắc nét tuyệt đối cho tên đội hình */
-        .team-title {
-          font-weight: 800;
-          letter-spacing: -0.01em;
-          text-rendering: geometricPrecision;
-          -webkit-font-smoothing: antialiased;
-        }
+        img { image-rendering: auto; }
+        .team-title { font-weight: 800; letter-spacing: -0.01em; text-rendering: geometricPrecision; -webkit-font-smoothing: antialiased; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a1428; }
         ::-webkit-scrollbar-thumb { background: #c89b3c; border-radius: 4px; }
@@ -648,7 +613,6 @@ export default function MetaTFTApp() {
                             {comp.tier}
                           </div>
                           <div>
-                            {/* Tên đội hình đã được tăng độ sắc nét qua class team-title */}
                             <div className="team-title text-[15px] text-white leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{comp.name}</div>
                             <div className="flex items-center gap-1.5 mt-1.5">
                               <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold border shadow-inner ${playstyleBadgeColor(comp.playstyle)}`}>{comp.playstyle}</span>
