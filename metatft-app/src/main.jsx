@@ -533,6 +533,13 @@ export default function MetaTFTApp() {
         img {
           image-rendering: auto;
         }
+        /* Cải thiện độ sắc nét tuyệt đối cho tên đội hình */
+        .team-title {
+          font-weight: 800;
+          letter-spacing: -0.01em;
+          text-rendering: geometricPrecision;
+          -webkit-font-smoothing: antialiased;
+        }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a1428; }
         ::-webkit-scrollbar-thumb { background: #c89b3c; border-radius: 4px; }
@@ -620,7 +627,8 @@ export default function MetaTFTApp() {
                             {comp.tier}
                           </div>
                           <div>
-                            <div className="font-extrabold text-[15px] text-[#f0e6d2] leading-tight drop-shadow-sm">{comp.name}</div>
+                            {/* Tên đội hình đã được tăng độ sắc nét qua class team-title */}
+                            <div className="team-title text-[15px] text-white leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">{comp.name}</div>
                             <div className="flex items-center gap-1.5 mt-1.5">
                               <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold border shadow-inner ${playstyleBadgeColor(comp.playstyle)}`}>{comp.playstyle}</span>
                               <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold border shadow-inner ${difficultyBadgeColor(comp.difficulty)}`}>{comp.difficulty}</span>
