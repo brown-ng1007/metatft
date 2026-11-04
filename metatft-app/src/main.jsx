@@ -376,21 +376,39 @@ const AugmentBadge = ({ augId, compact = false }) => {
     Silver: 'bg-[#1e2328] border-slate-400/50 text-slate-200'
   };
 
-  const dotColors = { Prismatic: 'bg-fuchsia-400', Gold: 'bg-amber-400', Silver: 'bg-slate-300' };
-
   if (compact) {
     return (
-      <div title={`${aug.name} — ${aug.desc} (Avg Place: #${aug.avgPlace})`} className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
+      <div title={`${aug.name} — ${aug.desc} (Avg Place: #${aug.avgPlace})`} className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
+        {/* Hiển thị icon hình ảnh thật, nếu lỗi tự động đổi sang icon Sparkles vàng dự phòng */}
         {!imgErr && aug.icon ? (
-          <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-3.5 h-3.5 rounded-sm object-cover drop-shadow-sm" />
+          <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-4 h-4 rounded-[2px] object-cover shrink-0 drop-shadow-sm" />
         ) : (
-          <span className={`w-2 h-2 rounded-full ${dotColors[aug.tier] || dotColors.Gold}`} />
+          <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
         )}
-        <span className="truncate max-w-[140px] drop-shadow-sm">{aug.name.split(' (')[0]}</span>
+        <span className="truncate max-w-[150px] drop-shadow-sm">{aug.name.split(' (')[0]}</span>
       </div>
     );
   }
 
+  return (
+    <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
+      <div className="w-9 h-9 rounded-sm bg-black/50 border border-white/20 shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
+        {!imgErr && aug.icon ? (
+          <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-full h-full object-cover" />
+        ) : (
+          <Sparkles className="w-4 h-4 text-amber-300" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-extrabold text-white truncate drop-shadow-sm">{aug.name}</span>
+          <span className="text-[10px] font-black text-emerald-400 shrink-0">#{aug.avgPlace} Avg</span>
+        </div>
+        <p className="text-[11px] text-gray-300/90 mt-0.5 leading-snug">{aug.desc}</p>
+      </div>
+    </div>
+  );
+};
   return (
     <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
       <div className="w-9 h-9 rounded-sm bg-black/50 border border-white/20 shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
