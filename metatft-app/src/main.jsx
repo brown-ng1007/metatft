@@ -219,7 +219,7 @@ const AugmentBadge = ({ augId, compact = false }) => {
 
   if (compact) {
     return (
-      <div title={`${aug.name} — ${aug.desc} (Avg Place: #${aug.avgPlace})`} className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
+      <div title={`${aug.name} — ${aug.desc} (Avg Place: #${aug.avgPlace})`} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
         {!imgErr && aug.icon ? (
           <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-4 h-4 rounded-[2px] object-cover shrink-0 drop-shadow-sm" />
         ) : (
@@ -491,14 +491,14 @@ export default function MetaTFTApp() {
       )}
 
       <header className="bg-[#091428] border-b border-[#c89b3c]/40 sticky top-0 z-40 shadow-lg">
-        <div className="max-w-[1340px] mx-auto px-4 h-14 flex items-center justify-between gap-3 overflow-hidden">
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="max-w-[1340px] mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 shrink-0">
             <img 
               src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Spatula.png" 
               alt="Spatula" 
               className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-[0_2px_5px_rgba(200,155,60,0.8)] shrink-0" 
             />
-            <span className="font-extrabold text-lg sm:text-xl text-[#f0e6d2] tracking-wider drop-shadow-md whitespace-nowrap">
+            <span className="font-extrabold text-base sm:text-xl text-[#f0e6d2] tracking-wider drop-shadow-md whitespace-nowrap">
               Brown's Meta Book
             </span>
             <span className="hidden md:inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-sm bg-[#c89b3c]/15 text-[#c89b3c] border border-[#c89b3c]/40 shadow-inner tracking-wide whitespace-nowrap">
