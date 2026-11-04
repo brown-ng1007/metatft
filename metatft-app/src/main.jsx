@@ -5,9 +5,6 @@ import {
   Trash2, CheckCircle2, Radio, Sparkles, Pin
 } from 'lucide-react';
 
-// ============================================================================
-// 1. ENGINE ĐỒNG BỘ TỰ ĐỘNG & BỘ MÃ HÓA TEAM PLANNER CODE IN-GAME
-// ============================================================================
 const CDRAGON_TFT_JSON = 'https://raw.communitydragon.org/latest/cdragon/tft/en_us.json';
 
 function resolveCDragonAssetUrl(texPath) {
@@ -19,7 +16,6 @@ function resolveCDragonAssetUrl(texPath) {
   return `https://raw.communitydragon.org/latest/game/${cleaned}`;
 }
 
-// Bảng mã Hex chuẩn của các tướng & quái Set 18
 const CHAMPIONS_HEX_ROSTER = [
   { key: 'Morgana', name: 'Morgana', cost: 4, hexCode: '04' },
   { key: 'Shen', name: 'Shen', cost: 2, hexCode: '08' },
@@ -105,9 +101,6 @@ function decodeTeamPlannerCode(codeStr) {
   }
 }
 
-// ============================================================================
-// 2. DANH MỤC LÕI NÂNG CẤP (AUGMENTS CATALOG) & TRANG BỊ
-// ============================================================================
 const AUGMENTS_CATALOG = {
   vanguard_crest: { id: 'vanguard_crest', name: 'Huy Hiệu Hộ Vệ (Vanguard Crest)', tier: 'Gold', avgPlace: 3.78, desc: 'Nhận 1 Ấn Hộ Vệ và 1 tướng Hộ Vệ.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/trait_crest_generic.tft_set11.png' },
   coven_crown: { id: 'coven_crown', name: 'Vương Miện Tiên Hắc Ám (Coven Crown)', tier: 'Prismatic', avgPlace: 3.62, desc: 'Nhận 1 Ấn Tiên Hắc Ám, 1 Bùa Xanh và 1 Morgana.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/trait_crown_generic.tft_set11.png' },
@@ -151,35 +144,15 @@ const ITEMS_CATALOG = {
   crownguard: { id: 'crownguard', name: 'Crownguard', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Crownguard.png' }
 };
 
-// ============================================================================
-// ============================================================================
-// 3. DANH SÁCH ĐỘI HÌNH META SET 18 CHUẨN
-// ============================================================================
 const FALLBACK_SET18_COMPS = [
   {
-    id: 'vanguard-morgana',
-    tier: 'S',
-    name: 'Vanguard Morgana',
-    playstyle: 'Fast 9',
-    difficulty: 'Easy',
-    avgPlace: 4.03,
-    pickRate: 0.18,
-    winRate: 22.1,
-    top4Rate: 57.1,
-    setTag: 'TFTSet18',
-    earlyUnits: ['Elise', 'Cassiopeia', 'Diana', 'Amumu'],
-    leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) → Lv9 (5-2)',
-    carousel: 'Nước Mắt > Gậy Quá Khổ > Đai Khổng Lồ',
+    id: 'vanguard-morgana', tier: 'S', name: 'Vanguard Morgana', playstyle: 'Fast 9', difficulty: 'Easy', avgPlace: 4.03, pickRate: 0.18, winRate: 22.1, top4Rate: 57.1, setTag: 'TFTSet18',
+    earlyUnits: ['Elise', 'Cassiopeia', 'Diana', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) → Lv9 (5-2)', carousel: 'Nước Mắt > Gậy Quá Khổ > Đai Khổng Lồ',
     augments: ['coven_crown', 'jeweled_lotus_2', 'vanguard_crest', 'level_up'],
     traits: [
-      { name: 'Vanguard', count: 4, style: 'silver' },
-      { name: 'Coven', count: 3, style: 'bronze' },
-      { name: 'Invoker', count: 3, style: 'bronze' },
-      { name: 'Lunar', count: 2, style: 'bronze' },
-      { name: 'Riftbeast', count: 2, style: 'bronze' },
-      { name: 'Apex Predator', count: 1, style: 'gold' },
-      { name: 'Attuned', count: 1, style: 'gold' },
-      { name: 'Emerald Aspect', count: 1, style: 'gold' }
+      { name: 'Vanguard', count: 4, style: 'silver' }, { name: 'Coven', count: 3, style: 'bronze' }, { name: 'Invoker', count: 3, style: 'bronze' },
+      { name: 'Lunar', count: 2, style: 'bronze' }, { name: 'Riftbeast', count: 2, style: 'bronze' }, { name: 'Apex Predator', count: 1, style: 'gold' },
+      { name: 'Attuned', count: 1, style: 'gold' }, { name: 'Emerald Aspect', count: 1, style: 'gold' }
     ],
     units: [
       { key: 'Morgana', name: 'Morgana', cost: 4, star: 2, row: 3, col: 0, items: ['bluebuff', 'jeweled', 'morello'] },
@@ -193,27 +166,12 @@ const FALLBACK_SET18_COMPS = [
     ]
   },
   {
-    id: 'invoker-teemo-alistar',
-    tier: 'S',
-    name: 'Invoker Teemo Alistar',
-    playstyle: 'lvl 6',
-    difficulty: 'Easy',
-    avgPlace: 4.16,
-    pickRate: 0.20,
-    winRate: 7.3,
-    top4Rate: 58.8,
-    setTag: 'TFTSet18',
-    earlyUnits: ['Teemo', 'Alistar', 'Kobuko', 'Leblanc'],
-    leveling: 'Slow Roll ở Cấp 6 (giữ trên 50 vàng) để lên Teemo 3★ & Alistar 3★',
-    carousel: 'Nước Mắt > Gậy Quá Khổ > Giáp Lưới',
+    id: 'invoker-teemo-alistar', tier: 'S', name: 'Invoker Teemo Alistar', playstyle: 'lvl 6', difficulty: 'Easy', avgPlace: 4.16, pickRate: 0.20, winRate: 7.3, top4Rate: 58.8, setTag: 'TFTSet18',
+    earlyUnits: ['Teemo', 'Alistar', 'Kobuko', 'Leblanc'], leveling: 'Slow Roll ở Cấp 6 (giữ trên 50 vàng) để lên Teemo 3★ & Alistar 3★', carousel: 'Nước Mắt > Gậy Quá Khổ > Giáp Lưới',
     augments: ['prismatic_ticket', 'trade_sector', 'invoker_crest', 'jeweled_lotus_2'],
     traits: [
-      { name: 'Vanguard', count: 3, style: 'silver' },
-      { name: 'Coven', count: 3, style: 'bronze' },
-      { name: 'Invoker', count: 3, style: 'bronze' },
-      { name: 'Brawler', count: 2, style: 'bronze' },
-      { name: 'Elderwood', count: 2, style: 'bronze' },
-      { name: 'Sprykin', count: 2, style: 'bronze' }
+      { name: 'Vanguard', count: 3, style: 'silver' }, { name: 'Coven', count: 3, style: 'bronze' }, { name: 'Invoker', count: 3, style: 'bronze' },
+      { name: 'Brawler', count: 2, style: 'bronze' }, { name: 'Elderwood', count: 2, style: 'bronze' }, { name: 'Sprykin', count: 2, style: 'bronze' }
     ],
     units: [
       { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 0, items: ['bluebuff', 'jeweled', 'morello'] },
@@ -227,29 +185,13 @@ const FALLBACK_SET18_COMPS = [
     ]
   },
   {
-    id: 'vanguard-alune',
-    tier: 'S',
-    name: 'Vanguard Alune',
-    playstyle: 'Fast 9',
-    difficulty: 'Hard',
-    avgPlace: 4.17,
-    pickRate: 0.30,
-    winRate: 19.9,
-    top4Rate: 54.6,
-    setTag: 'TFTSet18',
-    earlyUnits: ['Rakan', 'Diana', 'Soraka', 'Amumu'],
-    leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) → Lv9 (5-1)',
-    carousel: 'Kiếm B.F > Nước Mắt > Gậy Quá Khổ',
+    id: 'vanguard-alune', tier: 'S', name: 'Vanguard Alune', playstyle: 'Fast 9', difficulty: 'Hard', avgPlace: 4.17, pickRate: 0.30, winRate: 19.9, top4Rate: 54.6, setTag: 'TFTSet18',
+    earlyUnits: ['Rakan', 'Diana', 'Soraka', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) → Lv9 (5-1)', carousel: 'Kiếm B.F > Nước Mắt > Gậy Quá Khổ',
     augments: ['level_up', 'patient_study', 'vanguard_crest', 'jeweled_lotus_3'],
     traits: [
-      { name: 'Vanguard', count: 4, style: 'silver' },
-      { name: 'Blossom', count: 2, style: 'bronze' },
-      { name: 'Invoker', count: 2, style: 'bronze' },
-      { name: 'Lunar', count: 2, style: 'bronze' },
-      { name: 'Spellweaver', count: 2, style: 'bronze' },
-      { name: 'Attuned', count: 1, style: 'gold' },
-      { name: 'Emerald Aspect', count: 1, style: 'gold' },
-      { name: 'Greenfather', count: 1, style: 'gold' }
+      { name: 'Vanguard', count: 4, style: 'silver' }, { name: 'Blossom', count: 2, style: 'bronze' }, { name: 'Invoker', count: 2, style: 'bronze' },
+      { name: 'Lunar', count: 2, style: 'bronze' }, { name: 'Spellweaver', count: 2, style: 'bronze' }, { name: 'Attuned', count: 1, style: 'gold' },
+      { name: 'Emerald Aspect', count: 1, style: 'gold' }, { name: 'Greenfather', count: 1, style: 'gold' }
     ],
     units: [
       { key: 'Alune', name: 'Alune', cost: 5, star: 2, row: 3, col: 6, items: ['shojin', 'jeweled', 'guardbreaker'] },
@@ -262,110 +204,9 @@ const FALLBACK_SET18_COMPS = [
       { key: 'Fiddlesticks', name: 'Fiddlesticks', cost: 3, star: 2, row: 1, col: 5, items: [] },
       { key: 'Rakan', name: 'Rakan', cost: 2, star: 2, row: 0, col: 5, items: [] }
     ]
-  },
-  {
-    id: 'riftbeast-brambleback',
-    tier: 'S',
-    name: 'Riftbeast Brambleback',
-    playstyle: 'Fast 8',
-    difficulty: 'Easy',
-    avgPlace: 4.23,
-    pickRate: 0.70,
-    winRate: 13.4,
-    top4Rate: 54.9,
-    setTag: 'TFTSet18',
-    earlyUnits: ['Pebbles', 'Krug', 'Murkwolf', 'Vi'],
-    leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Roll tìm Brambleback 2★ & Krug 3★',
-    carousel: 'Cung Gỗ > Kiếm B.F > Đai Khổng Lồ',
-    augments: ['riftbeast_crown', 'healing_orbs_2', 'cybernetic_bulk_2', 'pandoras_items'],
-    traits: [
-      { name: 'Riftbeast', count: 7, style: 'gold' },
-      { name: 'Brawler', count: 2, style: 'bronze' },
-      { name: 'Invoker', count: 2, style: 'bronze' },
-      { name: 'Ravager', count: 2, style: 'bronze' },
-      { name: 'Vanguard', count: 2, style: 'bronze' },
-      { name: 'Apex Predator', count: 1, style: 'gold' },
-      { name: 'Emerald Aspect', count: 1, style: 'gold' }
-    ],
-    units: [
-      { key: 'Brambleback', name: 'Brambleback', cost: 4, star: 2, row: 3, col: 1, items: ['guinsoo', 'ie', 'hoj'] },
-      { key: 'Krug', name: 'Krug', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'ElderDragon', name: 'Elder Dragon', cost: 5, star: 2, row: 1, col: 3, items: ['ie', 'lw', 'bt'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 4, items: ['redemption'] },
-      { key: 'Gnar', name: 'Gnar', cost: 5, star: 2, row: 0, col: 2, items: [] },
-      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 5, items: [] },
-      { key: 'Murkwolf', name: 'Murkwolf', cost: 2, star: 2, row: 1, col: 1, items: [] },
-      { key: 'Pebbles', name: 'Pebbles', cost: 1, star: 3, row: 3, col: 5, items: [] }
-    ]
-  },
-  {
-    id: 'flora-fatalis-azir',
-    tier: 'S',
-    name: 'Flora Fatalis Azir',
-    playstyle: 'lvl 7',
-    difficulty: 'Medium',
-    avgPlace: 4.25,
-    pickRate: 0.23,
-    winRate: 12.6,
-    top4Rate: 55.1,
-    setTag: 'TFTSet18',
-    earlyUnits: ['Teemo', 'Rammus', 'Soraka', 'Veigar'],
-    leveling: 'Slow Roll ở Cấp 7 để nâng Azir 3★, Rammus 3★ và Fiddlesticks 3★',
-    carousel: 'Gậy Quá Khổ > Cung Gỗ > Giáp Lưới',
-    augments: ['prismatic_ticket', 'magic_wand', 'trade_sector', 'healing_orbs_2'],
-    traits: [
-      { name: 'Flora Fatalis', count: 2, style: 'gold' },
-      { name: 'Sprykin', count: 3, style: 'silver' },
-      { name: 'Defender', count: 2, style: 'bronze' },
-      { name: 'Invoker', count: 2, style: 'bronze' },
-      { name: 'Spellweaver', count: 2, style: 'bronze' },
-      { name: 'Thornmaiden', count: 1, style: 'gold' }
-    ],
-    units: [
-      { key: 'Azir', name: 'Azir', cost: 3, star: 3, row: 3, col: 0, items: ['guinsoo', 'archangel', 'gunblade'] },
-      { key: 'Rammus', name: 'Rammus', cost: 3, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
-      { key: 'Zyra', name: 'Zyra', cost: 5, star: 2, row: 3, col: 2, items: ['shojin', 'morello'] },
-      { key: 'Fiddlesticks', name: 'Fiddlesticks', cost: 3, star: 3, row: 1, col: 3, items: ['ionic', 'crownguard'] },
-      { key: 'Soraka', name: 'Soraka', cost: 3, star: 2, row: 3, col: 4, items: [] },
-      { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 5, items: [] },
-      { key: 'Veigar', name: 'Veigar', cost: 3, star: 2, row: 3, col: 6, items: [] }
-    ]
-  },
-  {
-    id: 'lunar-nidalee',
-    tier: 'A',
-    name: 'Lunar Nidalee',
-    playstyle: 'Fast 8',
-    difficulty: 'Medium',
-    avgPlace: 4.32,
-    pickRate: 0.22,
-    winRate: 7.4,
-    top4Rate: 55.8,
-    setTag: 'TFTSet18',
-    earlyUnits: ['Vi', 'Varus', 'Diana', 'Amumu'],
-    leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Roll tìm Nidalee 2★ & Aphelios 2★',
-    carousel: 'Kiếm B.F > Cung Gỗ > Áo Choàng Bạc',
-    augments: ['lunar_crest', 'cybernetic_bulk_2', 'component_buffet', 'healing_orbs_2'],
-    traits: [
-      { name: 'Lunar', count: 4, style: 'gold' },
-      { name: 'Hunter', count: 2, style: 'bronze' },
-      { name: 'Invoker', count: 2, style: 'bronze' },
-      { name: 'Vanguard', count: 2, style: 'bronze' }
-    ],
-    units: [
-      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 1, items: ['bt', 'titans', 'hoj'] },
-      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 6, items: ['guinsoo', 'ie', 'lw'] },
-      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
-      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 4, items: [] },
-      { key: 'Diana', name: 'Diana', cost: 3, star: 2, row: 0, col: 2, items: [] },
-      { key: 'KogMaw', name: "Kog'Maw", cost: 3, star: 2, row: 3, col: 4, items: [] },
-      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 0, col: 1, items: [] },
-      { key: 'Varus', name: 'Varus', cost: 2, star: 2, row: 3, col: 5, items: [] }
-    ]
   }
 ];
-// 4. CÁC COMPONENT GIAO DIỆN CHI TIẾT
-// ============================================================================
+
 const AugmentBadge = ({ augId, compact = false }) => {
   const [imgErr, setImgErr] = useState(false);
   const aug = AUGMENTS_CATALOG[augId] || { id: augId, name: augId, tier: 'Gold', avgPlace: 3.9, desc: 'Lõi nâng cấp đề xuất trong Meta.' };
@@ -379,7 +220,6 @@ const AugmentBadge = ({ augId, compact = false }) => {
   if (compact) {
     return (
       <div title={`${aug.name} — ${aug.desc} (Avg Place: #${aug.avgPlace})`} className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
-        {/* Hiển thị icon hình ảnh thật, nếu lỗi tự động đổi sang icon Sparkles vàng dự phòng */}
         {!imgErr && aug.icon ? (
           <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-4 h-4 rounded-[2px] object-cover shrink-0 drop-shadow-sm" />
         ) : (
@@ -390,25 +230,6 @@ const AugmentBadge = ({ augId, compact = false }) => {
     );
   }
 
-  return (
-    <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
-      <div className="w-9 h-9 rounded-sm bg-black/50 border border-white/20 shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
-        {!imgErr && aug.icon ? (
-          <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-full h-full object-cover" />
-        ) : (
-          <Sparkles className="w-4 h-4 text-amber-300" />
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-extrabold text-white truncate drop-shadow-sm">{aug.name}</span>
-          <span className="text-[10px] font-black text-emerald-400 shrink-0">#{aug.avgPlace} Avg</span>
-        </div>
-        <p className="text-[11px] text-gray-300/90 mt-0.5 leading-snug">{aug.desc}</p>
-      </div>
-    </div>
-  );
-};
   return (
     <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
       <div className="w-9 h-9 rounded-sm bg-black/50 border border-white/20 shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
@@ -553,15 +374,9 @@ const TraitBadge = ({ trait, dynamicTraitMap }) => {
   );
 };
 
-// ============================================================================
-// 5. COMPONENT CHÍNH
-// ============================================================================
 export default function MetaTFTApp() {
   const [activeNav, setActiveNav] = useState('comps');
-  
-  // FIX 1: Đổi thành null để mặc định tất cả đều thu gọn
-  const [expandedCompId, setExpandedCompId] = useState(null);
-  
+  const [expandedComps, setExpandedComps] = useState({});
   const [copiedCompId, setCopiedCompId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentSetNumber, setCurrentSetNumber] = useState(18);
@@ -576,34 +391,17 @@ export default function MetaTFTApp() {
   const [selectedBuilderChamp, setSelectedBuilderChamp] = useState(CHAMPIONS_HEX_ROSTER[0]);
   const [importCodeInput, setImportCodeInput] = useState('');
 
-  // -------------------------------------------------------------
-  // CODE THÊM ICON BẰNG JAVASCRIPT (CÁCH 2)
-  // -------------------------------------------------------------
+  const toggleCompDetails = (compId, e) => {
+    if (e) e.stopPropagation();
+    setExpandedComps(prev => ({
+      ...prev,
+      [compId]: !prev[compId]
+    }));
+  };
+
   useEffect(() => {
-    // 1. Đổi tên Tab
-    document.title = "Brown's Meta Book";
-
-    const spatulaUrl = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Spatula.png";
-
-    // 2. Thêm Favicon cho trình duyệt máy tính
-    let favicon = document.querySelector("link[rel~='icon']");
-    if (!favicon) {
-      favicon = document.createElement('link');
-      favicon.rel = 'icon';
-      document.head.appendChild(favicon);
-    }
-    favicon.href = spatulaUrl;
-
-    // 3. Thêm Apple Touch Icon cho iOS/Android (App Icon màn hình chính)
-    let appleIcon = document.querySelector("link[rel='app-icon.png']");
-    if (!appleIcon) {
-      appleIcon = document.createElement('link');
-      appleIcon.rel = 'apple-touch-icon';
-      document.head.appendChild(appleIcon);
-    }
-    appleIcon.href = spatulaUrl;
+    document.title = "Brown's Meta Book - Set 18";
   }, []);
-  // -------------------------------------------------------------
 
   const triggerToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3200); };
 
@@ -669,10 +467,7 @@ export default function MetaTFTApp() {
   const builderPlannerCode = useMemo(() => encodeTeamPlannerCode(builderUnits, 'TFTSet18'), [builderUnits]);
 
   return (
-    // Nền tối Xanh Không Gian chuẩn Riot, màu chữ ngà, bật khử răng cưa
     <div className="min-h-screen bg-[#0a1428] text-[#f0e6d2] flex flex-col font-sans antialiased">
-      
-      {/* 2. CSS HỖ TRỢ HIỂN THỊ CỰC KỲ SẮC NÉT & SCROLLBAR HEXTECH */}
       <style>{`
         body {
           -webkit-font-smoothing: antialiased !important;
@@ -681,7 +476,6 @@ export default function MetaTFTApp() {
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
         img {
-          /* Trả về auto để trình duyệt tự khử răng cưa mượt mà cho ảnh HD */
           image-rendering: auto;
         }
         ::-webkit-scrollbar { width: 6px; }
@@ -696,32 +490,22 @@ export default function MetaTFTApp() {
         </div>
       )}
 
-      {/* HEADER: Thêm Xẻng Vàng (Spatula) */}
       <header className="bg-[#091428] border-b border-[#c89b3c]/40 sticky top-0 z-40 shadow-lg">
-        <div className="max-w-[1340px] mx-auto px-4 h-14 flex items-center justify-between gap-3">
-          
-          {/* PHẦN LOGO VÀ TIÊU ĐỀ (Đã thêm whitespace-nowrap chống rớt dòng) */}
+        <div className="max-w-[1340px] mx-auto px-4 h-14 flex items-center justify-between gap-3 overflow-hidden">
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <img 
               src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Spatula.png" 
               alt="Spatula" 
               className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-[0_2px_5px_rgba(200,155,60,0.8)] shrink-0" 
-              onError={(e) => e.target.src='https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/standard/spatula.png'}
             />
             <span className="font-extrabold text-lg sm:text-xl text-[#f0e6d2] tracking-wider drop-shadow-md whitespace-nowrap">
               Brown's Meta Book
             </span>
-            {/* Tự động ẩn huy hiệu Set 18 trên điện thoại để tiết kiệm chỗ */}
             <span className="hidden md:inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-sm bg-[#c89b3c]/15 text-[#c89b3c] border border-[#c89b3c]/40 shadow-inner tracking-wide whitespace-nowrap">
               SET {currentSetNumber}: {currentSetName.toUpperCase()}
             </span>
-            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0ac8b9] bg-[#0ac8b9]/10 border border-[#0ac8b9]/30 px-2.5 py-0.5 rounded-full shadow-inner whitespace-nowrap">
-              <Radio className="w-3 h-3 animate-pulse shrink-0" />
-              {syncStatus}
-            </span>
           </div>
 
-          {/* PHẦN NÚT BẤM (Cho phép lướt ngang trên điện thoại nếu quá dài) */}
           <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
             {[
               { id: 'comps', label: 'Tier List & Lõi' },
@@ -767,14 +551,14 @@ export default function MetaTFTApp() {
               {compsList
                 .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()) || c.units.some(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())))
                 .map(comp => {
-                  const isExpanded = expandedCompId === comp.id;
+                  const isExpanded = !!expandedComps[comp.id];
                   const isCopied = copiedCompId === comp.id;
                   const teamCode = encodeTeamPlannerCode(comp.units, comp.setTag);
                   const tierColors = { S: 'bg-[#ff6b6b] text-[#141518]', A: 'bg-[#feca57] text-[#141518]', B: 'bg-[#48dbfb] text-[#141518]' };
 
                   return (
                     <div key={comp.id} className="bg-[#1e2328] border border-[#c89b3c]/20 rounded-sm overflow-hidden hover:border-[#c89b3c]/50 hover:shadow-[0_0_12px_rgba(200,155,60,0.15)] transition-all">
-                      <div onClick={() => setExpandedCompId(isExpanded ? null : comp.id)} className="p-3 sm:px-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer">
+                      <div onClick={(e) => toggleCompDetails(comp.id, e)} className="p-3 sm:px-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer">
                         
                         <div className="flex items-center gap-3 lg:w-[220px] shrink-0">
                           <div className={`w-8 h-8 rounded-[3px] flex items-center justify-center font-black text-base shadow-sm ${tierColors[comp.tier] || tierColors.S}`}>
@@ -813,7 +597,7 @@ export default function MetaTFTApp() {
                             <button onClick={(e) => handleOpenInBuilder(comp, e)} className="flex items-center gap-1 px-2 py-1.5 rounded-sm text-[11px] font-bold bg-[#091428] hover:bg-[#207ac7] text-[#a09b8c] hover:text-white border border-white/10 transition-colors">
                               <Wrench className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Sửa Bài</span>
                             </button>
-                            <button onClick={(e) => { e.stopPropagation(); setExpandedCompId(isExpanded ? null : comp.id); }} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-sm text-[11px] font-bold border transition-colors ${isExpanded ? 'bg-[#c89b3c]/20 text-[#c89b3c] border-[#c89b3c]/40' : 'bg-[#091428] hover:bg-[#1e2328] text-[#a09b8c] border-white/10'}`}>
+                            <button onClick={(e) => toggleCompDetails(comp.id, e)} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-sm text-[11px] font-bold border transition-colors ${isExpanded ? 'bg-[#c89b3c]/20 text-[#c89b3c] border-[#c89b3c]/40' : 'bg-[#091428] hover:bg-[#1e2328] text-[#a09b8c] border-white/10'}`}>
                               <span>{isExpanded ? 'Thu gọn' : 'Chi tiết'}</span>
                               {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                             </button>
@@ -865,7 +649,6 @@ export default function MetaTFTApp() {
           </>
         )}
 
-        {/* ... Tab 2 và Tab 3 tự động kế thừa màu sắc mới từ cha bg-[#1e2328] border-[#c89b3c] ... */}
         {activeNav === 'builder' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
             <div className="lg:col-span-7 space-y-3">
@@ -919,7 +702,6 @@ export default function MetaTFTApp() {
   );
 }
 
-// Render App
 const rootElement = document.getElementById('root');
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(
