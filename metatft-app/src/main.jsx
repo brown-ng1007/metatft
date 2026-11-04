@@ -99,22 +99,22 @@ function decodeTeamPlannerCode(codeStr) {
 }
 
 const AUGMENTS_CATALOG = {
-  vanguard_crest: { id: 'vanguard_crest', name: 'Huy Hiệu Hộ Vệ', tier: 'Gold', avgPlace: 3.78, desc: 'Nhận 1 Ấn Hộ Vệ và 1 tướng Hộ Vệ.', icon: 'https://raw.communitydragon.org/latest/game/assets/ux/traiticons/trait_icon_vanguard.png' },
-  coven_crown: { id: 'coven_crown', name: 'Vương Miện Tiên Hắc Ám', tier: 'Prismatic', avgPlace: 3.62, desc: 'Nhận 1 Ấn Tiên Hắc Ám và 1 Morgana.', icon: 'https://raw.communitydragon.org/latest/game/assets/ux/traiticons/trait_icon_coven.png' },
-  invoker_crest: { id: 'invoker_crest', name: 'Huy Hiệu Thuật Sĩ', tier: 'Gold', avgPlace: 3.84, desc: 'Nhận 1 Ấn Thuật Sĩ.', icon: 'https://raw.communitydragon.org/latest/game/assets/ux/traiticons/trait_icon_invoker.png' },
-  riftbeast_crown: { id: 'riftbeast_crown', name: 'Vương Miện Quái Vật', tier: 'Prismatic', avgPlace: 3.55, desc: 'Nhận 1 Ấn Riftbeast và 1 Krug.', icon: 'https://raw.communitydragon.org/latest/game/assets/ux/traiticons/trait_icon_brawler.png' },
-  lunar_crest: { id: 'lunar_crest', name: 'Huy Hiệu Nguyệt Tộc', tier: 'Gold', avgPlace: 3.89, desc: 'Nhận 1 Ấn Nguyệt Tộc.', icon: 'https://raw.communitydragon.org/latest/game/assets/ux/traiticons/trait_icon_targon.png' },
-  jeweled_lotus_2: { id: 'jeweled_lotus_2', name: 'Khảm Bảo Thạch II', tier: 'Gold', avgPlace: 3.85, desc: 'Kỹ năng chí mạng và +20% Tỉ lệ Chí mạng.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/jeweledlotus2.png' },
-  jeweled_lotus_3: { id: 'jeweled_lotus_3', name: 'Khảm Bảo Thạch III', tier: 'Prismatic', avgPlace: 3.68, desc: 'Kỹ năng chí mạng và +45% Tỉ lệ Chí mạng.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/jeweledlotus3.png' },
-  cybernetic_bulk_2: { id: 'cybernetic_bulk_2', name: 'Giáp Năng Lượng II', tier: 'Gold', avgPlace: 3.92, desc: 'Tướng mang trang bị nhận thêm Máu.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/cyberneticbulk2.png' },
-  healing_orbs_2: { id: 'healing_orbs_2', name: 'Cầu Hồi Phục II', tier: 'Gold', avgPlace: 3.88, desc: 'Hồi máu cho đồng minh khi kẻ địch hạ gục.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/healingorbs2.png' },
-  magic_wand: { id: 'magic_wand', name: 'Đũa Phép', tier: 'Gold', avgPlace: 3.94, desc: 'Nhận 1 Gậy Quá Khổ và SMPT.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/magicwand.png' },
-  level_up: { id: 'level_up', name: 'Khuyến Mãi Kinh Nghiệm', tier: 'Prismatic', avgPlace: 3.71, desc: 'Nhận thêm XP khi mua kinh nghiệm.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/levelup.png' },
-  prismatic_ticket: { id: 'prismatic_ticket', name: 'Vé Kim Cương', tier: 'Prismatic', avgPlace: 3.65, desc: 'Tỉ lệ nhận lượt đổi cửa hàng miễn phí.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/goldenticket3.png' },
-  trade_sector: { id: 'trade_sector', name: 'Khu Giao Dịch', tier: 'Gold', avgPlace: 3.91, desc: 'Nhận 1 lượt đổi cửa hàng miễn phí mỗi vòng.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/tradesector.png' },
-  patient_study: { id: 'patient_study', name: 'Học Hỏi Kiên Nhẫn', tier: 'Gold', avgPlace: 3.86, desc: 'Nhận thêm XP sau mỗi giao tranh.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/patientstudy.png' },
-  pandoras_items: { id: 'pandoras_items', name: "Hộp Pandora", tier: 'Silver', avgPlace: 3.98, desc: 'Trang bị hàng chờ biến đổi ngẫu nhiên.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/pandorasitems1.png' },
-  component_buffet: { id: 'component_buffet', name: 'Tiệc Trang Bị', tier: 'Silver', avgPlace: 3.95, desc: 'Nhận thêm thành phần trang bị.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/componentbuffet1.png' }
+  vanguard_crest: { id: 'vanguard_crest', name: 'Huy Hiệu Hộ Vệ', tier: 'Gold', avgPlace: 3.78, desc: 'Nhận 1 Ấn Hộ Vệ và 1 tướng Hộ Vệ.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  coven_crown: { id: 'coven_crown', name: 'Vương Miện Tiên Hắc Ám', tier: 'Prismatic', avgPlace: 3.62, desc: 'Nhận 1 Ấn Tiên Hắc Ám và 1 Morgana.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-prismatic.png' },
+  invoker_crest: { id: 'invoker_crest', name: 'Huy Hiệu Thuật Sĩ', tier: 'Gold', avgPlace: 3.84, desc: 'Nhận 1 Ấn Thuật Sĩ.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  riftbeast_crown: { id: 'riftbeast_crown', name: 'Vương Miện Quái Vật', tier: 'Prismatic', avgPlace: 3.55, desc: 'Nhận 1 Ấn Riftbeast và 1 Krug.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-prismatic.png' },
+  lunar_crest: { id: 'lunar_crest', name: 'Huy Hiệu Nguyệt Tộc', tier: 'Gold', avgPlace: 3.89, desc: 'Nhận 1 Ấn Nguyệt Tộc.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  jeweled_lotus_2: { id: 'jeweled_lotus_2', name: 'Khảm Bảo Thạch II', tier: 'Gold', avgPlace: 3.85, desc: 'Kỹ năng chí mạng và +20% Tỉ lệ Chí mạng.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  jeweled_lotus_3: { id: 'jeweled_lotus_3', name: 'Khảm Bảo Thạch III', tier: 'Prismatic', avgPlace: 3.68, desc: 'Kỹ năng chí mạng và +45% Tỉ lệ Chí mạng.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-prismatic.png' },
+  cybernetic_bulk_2: { id: 'cybernetic_bulk_2', name: 'Giáp Năng Lượng II', tier: 'Gold', avgPlace: 3.92, desc: 'Tướng mang trang bị nhận thêm Máu.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  healing_orbs_2: { id: 'healing_orbs_2', name: 'Cầu Hồi Phục II', tier: 'Gold', avgPlace: 3.88, desc: 'Hồi máu cho đồng minh khi kẻ địch hạ gục.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  magic_wand: { id: 'magic_wand', name: 'Đũa Phép', tier: 'Gold', avgPlace: 3.94, desc: 'Nhận 1 Gậy Quá Khổ và SMPT.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  level_up: { id: 'level_up', name: 'Khuyến Mãi Kinh Nghiệm', tier: 'Prismatic', avgPlace: 3.71, desc: 'Nhận thêm XP khi mua kinh nghiệm.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-prismatic.png' },
+  prismatic_ticket: { id: 'prismatic_ticket', name: 'Vé Kim Cương', tier: 'Prismatic', avgPlace: 3.65, desc: 'Tỉ lệ nhận lượt đổi cửa hàng miễn phí.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-prismatic.png' },
+  trade_sector: { id: 'trade_sector', name: 'Khu Giao Dịch', tier: 'Gold', avgPlace: 3.91, desc: 'Nhận 1 lượt đổi cửa hàng miễn phí mỗi vòng.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  patient_study: { id: 'patient_study', name: 'Học Hỏi Kiên Nhẫn', tier: 'Gold', avgPlace: 3.86, desc: 'Nhận thêm XP sau mỗi giao tranh.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-gold.png' },
+  pandoras_items: { id: 'pandoras_items', name: "Hộp Pandora", tier: 'Silver', avgPlace: 3.98, desc: 'Trang bị hàng chờ biến đổi ngẫu nhiên.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-silver.png' },
+  component_buffet: { id: 'component_buffet', name: 'Tiệc Trang Bị', tier: 'Silver', avgPlace: 3.95, desc: 'Nhận thêm thành phần trang bị.', icon: 'https://c-tft-api.op.gg/img/set/18/tft-augment/tier-silver.png' }
 };
 
 const ITEMS_CATALOG = {
