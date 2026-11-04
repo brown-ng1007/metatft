@@ -203,7 +203,9 @@ const AUGMENTS_CATALOG = {
   trade_sector: { id: 'trade_sector', name: 'Khu Giao Dịch', tier: 'Gold', avgPlace: 3.91, desc: 'Nhận 1 lượt đổi cửa hàng miễn phí mỗi vòng.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/tradesector.png' },
   patient_study: { id: 'patient_study', name: 'Học Hỏi Kiên Nhẫn', tier: 'Gold', avgPlace: 3.86, desc: 'Nhận thêm XP sau mỗi giao tranh.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/patientstudy.png' },
   pandoras_items: { id: 'pandoras_items', name: "Hộp Pandora", tier: 'Silver', avgPlace: 3.98, desc: 'Trang bị hàng chờ biến đổi ngẫu nhiên.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/pandorasitems1.png' },
-  component_buffet: { id: 'component_buffet', name: 'Tiệc Trang Bị', tier: 'Silver', avgPlace: 3.95, desc: 'Nhận thêm thành phần trang bị.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/componentbuffet1.png' }
+  component_buffet: { id: 'component_buffet', name: 'Tiệc Trang Bị', tier: 'Silver', avgPlace: 3.95, desc: 'Nhận thêm thành phần trang bị.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/componentbuffet1.png' },  component_buffet: { ... },
+  blue_battery: { id: 'blue_battery', name: 'Pin Xanh Dương', tier: 'Silver', avgPlace: 3.93, desc: 'Tướng nhận thêm năng lượng khởi đầu.', icon: '' }
+};
 };
 const AUGMENT_EN_NAMES = {
   vanguard_crest: 'Vanguard Crest',
@@ -221,7 +223,9 @@ const AUGMENT_EN_NAMES = {
   trade_sector: 'Trade Sector',
   patient_study: 'Patient Study',
   pandoras_items: "Pandora's Items I",
-  component_buffet: 'Component Buffet I'
+  component_buffet: 'Component Buffet I',   component_buffet: 'Component Buffet I',
+  blue_battery: 'Blue Battery'
+};
 };
 Object.keys(AUGMENTS_CATALOG).forEach((k) => {
   AUGMENTS_CATALOG[k].en = AUGMENT_EN_NAMES[k];
@@ -249,7 +253,12 @@ const ITEMS_CATALOG = {
   redemption: { id: 'redemption', name: 'Redemption', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Redemption.png' },
   gunblade: { id: 'gunblade', name: 'Hextech Gunblade', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_HextechGunblade.png' },
   ionic: { id: 'ionic', name: 'Ionic Spark', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_IonicSpark.png' },
-  crownguard: { id: 'crownguard', name: 'Crownguard', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Crownguard.png' }
+  crownguard: { id: 'crownguard', name: 'Crownguard', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Crownguard.png' },   crownguard: { ... },
+  sterak: { id: 'sterak', name: "Sterak's Gage", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_SteraksGage.png' },
+  deathblade: { id: 'deathblade', name: 'Deathblade', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Deathblade.png' },
+  runaan: { id: 'runaan', name: "Runaan's Hurricane", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_RunaansHurricane.png' },
+  qss: { id: 'qss', name: 'Quicksilver', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Quicksilver.png' }
+};
 };
 
 const FALLBACK_SET18_COMPS = [
