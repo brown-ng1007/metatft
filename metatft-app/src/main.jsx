@@ -663,9 +663,8 @@ export default function MetaTFTApp() {
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
         img {
-          /* Giúp icon tướng và đồ hiển thị siêu nét, không bị mờ nhòe (blur) khi scale */
-          image-rendering: -webkit-optimize-contrast;
-          image-rendering: crisp-edges;
+          /* Trả về auto để trình duyệt tự khử răng cưa mượt mà cho ảnh HD */
+          image-rendering: auto;
         }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0a1428; }
