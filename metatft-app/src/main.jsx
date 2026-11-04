@@ -680,30 +680,35 @@ export default function MetaTFTApp() {
 
       {/* HEADER: Thêm Xẻng Vàng (Spatula) */}
       <header className="bg-[#091428] border-b border-[#c89b3c]/40 sticky top-0 z-40 shadow-lg">
-        <div className="max-w-[1340px] mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* ICON XẺNG VÀNG CÓ ĐỔ BÓNG */}
+        <div className="max-w-[1340px] mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          
+          {/* PHẦN LOGO VÀ TIÊU ĐỀ (Đã thêm whitespace-nowrap chống rớt dòng) */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <img 
               src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Spatula.png" 
               alt="Spatula" 
-              className="w-8 h-8 drop-shadow-[0_2px_5px_rgba(200,155,60,0.8)]" 
+              className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-[0_2px_5px_rgba(200,155,60,0.8)] shrink-0" 
               onError={(e) => e.target.src='https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/standard/spatula.png'}
             />
-           <span className="font-extrabold text-xl text-[#f0e6d2] tracking-wider drop-shadow-md">Brown's Meta Book</span>
-            <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-sm bg-[#c89b3c]/15 text-[#c89b3c] border border-[#c89b3c]/40 shadow-inner tracking-wide">
+            <span className="font-extrabold text-lg sm:text-xl text-[#f0e6d2] tracking-wider drop-shadow-md whitespace-nowrap">
+              Brown's Meta Book
+            </span>
+            {/* Tự động ẩn huy hiệu Set 18 trên điện thoại để tiết kiệm chỗ */}
+            <span className="hidden md:inline-block text-[10px] font-extrabold px-2 py-0.5 rounded-sm bg-[#c89b3c]/15 text-[#c89b3c] border border-[#c89b3c]/40 shadow-inner tracking-wide whitespace-nowrap">
               SET {currentSetNumber}: {currentSetName.toUpperCase()}
             </span>
-            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0ac8b9] bg-[#0ac8b9]/10 border border-[#0ac8b9]/30 px-2.5 py-0.5 rounded-full shadow-inner">
-              <Radio className="w-3 h-3 animate-pulse" />
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-[#0ac8b9] bg-[#0ac8b9]/10 border border-[#0ac8b9]/30 px-2.5 py-0.5 rounded-full shadow-inner whitespace-nowrap">
+              <Radio className="w-3 h-3 animate-pulse shrink-0" />
               {syncStatus}
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* PHẦN NÚT BẤM (Cho phép lướt ngang trên điện thoại nếu quá dài) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
             {[
-              { id: 'comps', label: 'Tier List & Lõi Gợi Ý' },
-              { id: 'builder', label: 'Team Builder (Tạo Mã)' },
-              { id: 'augments', label: 'Bảng Xếp Hạng Lõi' }
+              { id: 'comps', label: 'Tier List & Lõi' },
+              { id: 'builder', label: 'Team Builder' },
+              { id: 'augments', label: 'Bảng Xếp Hạng' }
             ].map(tab => (
               <button
                 key={tab.id}
