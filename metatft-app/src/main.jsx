@@ -58,19 +58,6 @@ function useAugmentIndex() {
   return index;
 }
 
-function pickAugmentIcon(aug, index) {
- if (aug.iconOverride) return aug.iconOverride;
-  if (!index) return '';
-  if (aug.apiName && index.byApi[aug.apiName.toLowerCase()]) return index.byApi[aug.apiName.toLowerCase()];
-
-  const keys = [aug.en, aug.name].filter(Boolean).map(normAugName);
-  for (const k of keys) if (index.byName[k]) return index.byName[k];
-
-  if (aug.en) {
-    const k = normAugName(aug.en);
-    const hit = Object.keys(index.byName).find((n) => n.startsWith(k) || k.startsWith(n));
-    if (hit) return index.byName[hit];
-  }
 const slugMetaTFT = (name) =>
   (name || '')
     .normalize('NFD')
@@ -88,7 +75,24 @@ function metaTFTCandidates(aug) {
     (m) => `https://metatft.gg/wp-content/uploads/${m}/${slug}.png`
   );
 }
-  // khớp theo apiName: bỏ "_" rồi tìm chuỗi chứa, ví dụ covencrown, vanguardcrest
+
+function pickAugmentIcon(aug, index) {
+  if (aug.iconOverride) return aug.iconOverride;
+  if (!index) return '';
+  if (aug.apiName && index.byApi[aug.apiName.toLowerCase()]) return index.byApi[aug.apiName.toLowerCase()];
+
+  const keys = [aug.en, aug.name].filter(Boolean).map(normAugName);
+  for (const k of keys) if (index.byName[k]) return index.byName[k];
+
+  if (aug.en) {
+    const k = normAugName(aug.en);
+    const hit = Object.keys(index.byName).find(
+      (n) => n.length >= 6 && (n.startsWith(k) || k.startsWith(n))
+    );
+    if (hit) return index.byName[hit];
+  }
+
+  // khớp theo apiName, ví dụ covencrown, vanguardcrest
   const idKey = normAugName((aug.id || '').replace(/_\d+$/, ''));
   const enKey = normAugName(aug.en || '');
   const apiKey = Object.keys(index.byApi).find((a) => {
@@ -222,6 +226,8 @@ const AUGMENT_EN_NAMES = {
 Object.keys(AUGMENTS_CATALOG).forEach((k) => {
   AUGMENTS_CATALOG[k].en = AUGMENT_EN_NAMES[k];
 });
+AUGMENTS_CATALOG.vanguard_crest.apiName = 'TFT14_Augment_VanguardCrest';
+});
 const ITEMS_CATALOG = {
   bluebuff: { id: 'bluebuff', name: 'Blue Buff', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_BlueBuff.png' },
   jeweled: { id: 'jeweled', name: 'Jeweled Gauntlet', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_JeweledGauntlet.png' },
@@ -237,7 +243,7 @@ const ITEMS_CATALOG = {
   ie: { id: 'ie', name: 'Infinity Edge', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_InfinityEdge.png' },
   lw: { id: 'lw', name: 'Last Whisper', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_LastWhisper.png' },
   bt: { id: 'bt', name: 'Bloodthirster', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Bloodthirster.png' },
-  titans: { id: 'titans', name: "Titan's ", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Titans.png' },
+ titans: { id: 'titans', name: "Titan's Resolve", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_TitansResolve.png' },
   hoj: { id: 'hoj', name: 'Hand of Justice', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_UnstableConcoction.png' },
   guardbreaker: { id: 'guardbreaker', name: 'Guardbreaker', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_PowerGauntlet.png' },
   redemption: { id: 'redemption', name: 'Redemption', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Redemption.png' },
@@ -576,7 +582,7 @@ const iconUrl = candidates[step] || '';
       <div title={`${aug.name} — ${aug.desc}`} className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
         <span className={`w-6 h-6 rounded-[4px] bg-black/60 shrink-0 flex items-center justify-center overflow-hidden ${frame}`}>
           {showImg ? (
-            <img src={iconUrl} alt={aug.name} loading="lazy" onError={() => setImgErr(true)} className="w-full h-full object-cover" />
+            <img src={iconUrl} alt={aug.name} loading="lazy" onError={() => setStep((s) => s + 1)} className="w-full h-full object-cover" />
           ) : (
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
           )}
@@ -590,7 +596,7 @@ const iconUrl = candidates[step] || '';
     <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
       <div className={`w-10 h-10 rounded-md bg-black/60 shrink-0 flex items-center justify-center overflow-hidden ${frame}`}>
         {showImg ? (
-          <img src={iconUrl} alt={aug.name} loading="lazy" onError={() => setImgErr(true)} className="w-full h-full object-cover" />
+          <img src={iconUrl} alt={aug.name} loading="lazy" onError={() => setStep((s) => s + 1)} className="w-full h-full object-cover" />
         ) : (
           <Sparkles className="w-4 h-4 text-amber-300" />
         )}
@@ -636,7 +642,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
           <img
             src={currentImgUrl}
             alt={unit.name || unit.key}
-           onError={() => setStep((s) => s + 1)}
+           onError={() => setFallbackStep((s) => s + 1)}
             className="w-full h-full object-cover object-center"
           />
         </div>
