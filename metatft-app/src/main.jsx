@@ -204,6 +204,61 @@ const FALLBACK_SET18_COMPS = [
       { key: 'Fiddlesticks', name: 'Fiddlesticks', cost: 3, star: 2, row: 1, col: 5, items: [] },
       { key: 'Rakan', name: 'Rakan', cost: 2, star: 2, row: 0, col: 5, items: [] }
     ]
+  },
+  {
+    id: 'riftbeast-brambleback', tier: 'S', name: 'Riftbeast Brambleback', playstyle: 'Fast 8', difficulty: 'Easy', avgPlace: 4.23, pickRate: 0.70, winRate: 13.4, top4Rate: 54.9, setTag: 'TFTSet18',
+    earlyUnits: ['Pebbles', 'Krug', 'Murkwolf', 'Vi'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Roll tìm Brambleback 2★ & Krug 3★', carousel: 'Cung Gỗ > Kiếm B.F > Đai Khổng Lồ',
+    augments: ['riftbeast_crown', 'healing_orbs_2', 'cybernetic_bulk_2', 'pandoras_items'],
+    traits: [
+      { name: 'Riftbeast', count: 7, style: 'gold' }, { name: 'Brawler', count: 2, style: 'bronze' }, { name: 'Invoker', count: 2, style: 'bronze' },
+      { name: 'Ravager', count: 2, style: 'bronze' }, { name: 'Vanguard', count: 2, style: 'bronze' }, { name: 'Apex Predator', count: 1, style: 'gold' }, { name: 'Emerald Aspect', count: 1, style: 'gold' }
+    ],
+    units: [
+      { key: 'Brambleback', name: 'Brambleback', cost: 4, star: 2, row: 3, col: 1, items: ['guinsoo', 'ie', 'hoj'] },
+      { key: 'Krug', name: 'Krug', cost: 2, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
+      { key: 'ElderDragon', name: 'Elder Dragon', cost: 5, star: 2, row: 1, col: 3, items: ['ie', 'lw', 'bt'] },
+      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 4, items: ['redemption'] },
+      { key: 'Gnar', name: 'Gnar', cost: 5, star: 2, row: 0, col: 2, items: [] },
+      { key: 'Taric', name: 'Taric', cost: 5, star: 2, row: 0, col: 5, items: [] },
+      { key: 'Murkwolf', name: 'Murkwolf', cost: 2, star: 2, row: 1, col: 1, items: [] },
+      { key: 'Pebbles', name: 'Pebbles', cost: 1, star: 3, row: 3, col: 5, items: [] }
+    ]
+  },
+  {
+    id: 'flora-fatalis-azir', tier: 'S', name: 'Flora Fatalis Azir', playstyle: 'lvl 7', difficulty: 'Medium', avgPlace: 4.25, pickRate: 0.23, winRate: 12.6, top4Rate: 55.1, setTag: 'TFTSet18',
+    earlyUnits: ['Teemo', 'Rammus', 'Soraka', 'Veigar'], leveling: 'Slow Roll ở Cấp 7 để nâng Azir 3★, Rammus 3★ và Fiddlesticks 3★', carousel: 'Gậy Quá Khổ > Cung Gỗ > Giáp Lưới',
+    augments: ['prismatic_ticket', 'magic_wand', 'trade_sector', 'healing_orbs_2'],
+    traits: [
+      { name: 'Flora Fatalis', count: 2, style: 'gold' }, { name: 'Sprykin', count: 3, style: 'silver' }, { name: 'Defender', count: 2, style: 'bronze' },
+      { name: 'Invoker', count: 2, style: 'bronze' }, { name: 'Spellweaver', count: 2, style: 'bronze' }, { name: 'Thornmaiden', count: 1, style: 'gold' }
+    ],
+    units: [
+      { key: 'Azir', name: 'Azir', cost: 3, star: 3, row: 3, col: 0, items: ['guinsoo', 'archangel', 'gunblade'] },
+      { key: 'Rammus', name: 'Rammus', cost: 3, star: 3, row: 0, col: 3, items: ['warmog', 'bramble', 'gargoyle'] },
+      { key: 'Zyra', name: 'Zyra', cost: 5, star: 2, row: 3, col: 2, items: ['shojin', 'morello'] },
+      { key: 'Fiddlesticks', name: 'Fiddlesticks', cost: 3, star: 3, row: 1, col: 3, items: ['ionic', 'crownguard'] },
+      { key: 'Soraka', name: 'Soraka', cost: 3, star: 2, row: 3, col: 4, items: [] },
+      { key: 'Teemo', name: 'Teemo', cost: 2, star: 3, row: 3, col: 5, items: [] },
+      { key: 'Veigar', name: 'Veigar', cost: 3, star: 2, row: 3, col: 6, items: [] }
+    ]
+  },
+  {
+    id: 'lunar-nidalee', tier: 'A', name: 'Lunar Nidalee', playstyle: 'Fast 8', difficulty: 'Medium', avgPlace: 4.32, pickRate: 0.22, winRate: 7.4, top4Rate: 55.8, setTag: 'TFTSet18',
+    earlyUnits: ['Vi', 'Varus', 'Diana', 'Amumu'], leveling: 'Lv4 (2-1) → Lv6 (3-2) → Lv8 (4-2) Roll tìm Nidalee 2★ & Aphelios 2★', carousel: 'Kiếm B.F > Cung Gỗ > Áo Choàng Bạc',
+    augments: ['lunar_crest', 'cybernetic_bulk_2', 'component_buffet', 'healing_orbs_2'],
+    traits: [
+      { name: 'Lunar', count: 4, style: 'gold' }, { name: 'Hunter', count: 2, style: 'bronze' }, { name: 'Invoker', count: 2, style: 'bronze' }, { name: 'Vanguard', count: 2, style: 'bronze' }
+    ],
+    units: [
+      { key: 'Nidalee', name: 'Nidalee', cost: 4, star: 2, row: 1, col: 1, items: ['bt', 'titans', 'hoj'] },
+      { key: 'Aphelios', name: 'Aphelios', cost: 4, star: 2, row: 3, col: 6, items: ['guinsoo', 'ie', 'lw'] },
+      { key: 'Amumu', name: 'Amumu', cost: 3, star: 2, row: 0, col: 3, items: ['warmog', 'bramble', 'dclaw'] },
+      { key: 'Sentinel', name: 'Sentinel', cost: 4, star: 2, row: 0, col: 4, items: [] },
+      { key: 'Diana', name: 'Diana', cost: 3, star: 2, row: 0, col: 2, items: [] },
+      { key: 'KogMaw', name: "Kog'Maw", cost: 3, star: 2, row: 3, col: 4, items: [] },
+      { key: 'Vi', name: 'Vi', cost: 2, star: 2, row: 0, col: 1, items: [] },
+      { key: 'Varus', name: 'Varus', cost: 2, star: 2, row: 3, col: 5, items: [] }
+    ]
   }
 ];
 
