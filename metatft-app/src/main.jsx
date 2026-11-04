@@ -33,7 +33,7 @@ function loadAugmentIndex() {
         const api = it?.apiName || '';
         const icon = it?.icon || '';
         const isAug = /augment/i.test(api) || /\/augments?\//i.test(icon);
-        if (!isAug || !icon) return;
+       if (!isAug || !icon || /missing-t\d/i.test(icon)) return;
         const url = resolveCDragonAssetUrl(icon);
         byApi[api.toLowerCase()] = url;
         const n = normAugName(it.name);
@@ -59,6 +59,7 @@ function useAugmentIndex() {
 }
 
 function pickAugmentIcon(aug, index) {
+ if (aug.iconOverride) return aug.iconOverride;
   if (!index) return '';
   if (aug.apiName && index.byApi[aug.apiName.toLowerCase()]) return index.byApi[aug.apiName.toLowerCase()];
 
@@ -70,7 +71,23 @@ function pickAugmentIcon(aug, index) {
     const hit = Object.keys(index.byName).find((n) => n.startsWith(k) || k.startsWith(n));
     if (hit) return index.byName[hit];
   }
+const slugMetaTFT = (name) =>
+  (name || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .trim()
+    .replace(/[^A-Za-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 
+function metaTFTCandidates(aug) {
+  const slug = slugMetaTFT(aug.name);
+  if (!slug) return [];
+  return ['2026/08', '2026/09', '2026/10', '2026/07', '2026/11'].map(
+    (m) => `https://metatft.gg/wp-content/uploads/${m}/${slug}.png`
+  );
+}
   // khớp theo apiName: bỏ "_" rồi tìm chuỗi chứa, ví dụ covencrown, vanguardcrest
   const idKey = normAugName((aug.id || '').replace(/_\d+$/, ''));
   const enKey = normAugName(aug.en || '');
@@ -527,12 +544,19 @@ const FALLBACK_SET18_COMPS = [
 ];
 
 const AugmentBadge = ({ augId, compact = false }) => {
-  const [imgErr, setImgErr] = useState(false);
+  
   const index = useAugmentIndex();
   const aug = AUGMENTS_CATALOG[augId] || { id: augId, name: augId, tier: 'Gold', avgPlace: 3.9, desc: 'Lõi nâng cấp.', icon: '' };
-  const iconUrl = pickAugmentIcon(aug, index);
-
-  useEffect(() => { setImgErr(false); }, [iconUrl]);
+const [step, setStep] = useState(0);
+const candidates = useMemo(() => {
+  const list = [];
+  const cd = pickAugmentIcon(aug, index);
+  if (cd) list.push(cd);
+  list.push(...metaTFTCandidates(aug));
+  return list;
+}, [augId, index]);
+useEffect(() => { setStep(0); }, [candidates.length]);
+const iconUrl = candidates[step] || '';
 
   const tierStyles = {
     Prismatic: 'bg-gradient-to-r from-fuchsia-950/80 via-indigo-950/80 to-cyan-950/80 border-fuchsia-400/60 text-fuchsia-200',
@@ -545,7 +569,7 @@ const AugmentBadge = ({ augId, compact = false }) => {
     Silver: 'border-2 border-slate-300 shadow-[0_0_6px_rgba(203,213,225,0.45)]'
   };
   const frame = frameStyles[aug.tier] || frameStyles.Gold;
-  const showImg = !imgErr && iconUrl;
+  const showImg = !!iconUrl;
 
   if (compact) {
     return (
@@ -612,7 +636,7 @@ const ChampionPortraitTile = ({ unit, dynamicChampMap, size = 'md', showName = t
           <img
             src={currentImgUrl}
             alt={unit.name || unit.key}
-            onError={() => { if (fallbackStep < candidateUrls.length - 1) setFallbackStep(prev => prev + 1); }}
+           onError={() => setStep((s) => s + 1)}
             className="w-full h-full object-cover object-center"
           />
         </div>
