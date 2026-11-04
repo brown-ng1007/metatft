@@ -12,6 +12,64 @@ function resolveCDragonAssetUrl(texPath) {
   const cleaned = texPath.toLowerCase().replace(/\.tex$/, '.png').replace(/^assets\//, 'assets/');
   return `https://raw.communitydragon.org/latest/game/${cleaned}`;
 }
+const normAugName = (str) =>
+  (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/[^a-z0-9]/g, '');
+
+let augmentIndexPromise = null;
+function loadAugmentIndex() {
+  if (augmentIndexPromise) return augmentIndexPromise;
+  augmentIndexPromise = fetch(CDRAGON_TFT_JSON)
+    .then((r) => r.json())
+    .then((data) => {
+      const byName = {};
+      const byApi = {};
+      const list = Array.isArray(data?.items) ? data.items : [];
+      list.forEach((it) => {
+        const api = it?.apiName || '';
+        const icon = it?.icon || '';
+        const isAug = /augment/i.test(api) || /\/augments?\//i.test(icon);
+        if (!isAug || !icon) return;
+        const url = resolveCDragonAssetUrl(icon);
+        byApi[api.toLowerCase()] = url;
+        const n = normAugName(it.name);
+        if (n && !byName[n]) byName[n] = url;
+      });
+      return { byName, byApi };
+    })
+    .catch(() => {
+      augmentIndexPromise = null;
+      return { byName: {}, byApi: {} };
+    });
+  return augmentIndexPromise;
+}
+
+function useAugmentIndex() {
+  const [index, setIndex] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    loadAugmentIndex().then((i) => alive && setIndex(i));
+    return () => { alive = false; };
+  }, []);
+  return index;
+}
+
+function pickAugmentIcon(aug, index) {
+  if (!index) return '';
+  if (aug.apiName && index.byApi[aug.apiName.toLowerCase()]) return index.byApi[aug.apiName.toLowerCase()];
+  const keys = [aug.en, aug.name].filter(Boolean).map(normAugName);
+  for (const k of keys) if (index.byName[k]) return index.byName[k];
+  if (aug.en) {
+    const k = normAugName(aug.en);
+    const hit = Object.keys(index.byName).find((n) => n.startsWith(k) || k.startsWith(n));
+    if (hit) return index.byName[hit];
+  }
+  return '';
+}
 
 const CHAMPIONS_HEX_ROSTER = [
   { key: 'Morgana', name: 'Morgana', cost: 4, hexCode: '04' },
@@ -116,7 +174,27 @@ const AUGMENTS_CATALOG = {
   pandoras_items: { id: 'pandoras_items', name: "Hộp Pandora", tier: 'Silver', avgPlace: 3.98, desc: 'Trang bị hàng chờ biến đổi ngẫu nhiên.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/pandorasitems1.png' },
   component_buffet: { id: 'component_buffet', name: 'Tiệc Trang Bị', tier: 'Silver', avgPlace: 3.95, desc: 'Nhận thêm thành phần trang bị.', icon: 'https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/augments/choiceui/componentbuffet1.png' }
 };
-
+const AUGMENT_EN_NAMES = {
+  vanguard_crest: 'Vanguard Crest',
+  coven_crown: 'Coven Crown',
+  invoker_crest: 'Invoker Crest',
+  riftbeast_crown: 'Riftbeast Crown',
+  lunar_crest: 'Lunar Crest',
+  jeweled_lotus_2: 'Jeweled Lotus II',
+  jeweled_lotus_3: 'Jeweled Lotus III',
+  cybernetic_bulk_2: 'Cybernetic Bulk II',
+  healing_orbs_2: 'Healing Orbs II',
+  magic_wand: 'Magic Wand',
+  level_up: 'Level Up',
+  prismatic_ticket: 'Prismatic Ticket',
+  trade_sector: 'Trade Sector',
+  patient_study: 'Patient Study',
+  pandoras_items: "Pandora's Items I",
+  component_buffet: 'Component Buffet I'
+};
+Object.keys(AUGMENTS_CATALOG).forEach((k) => {
+  AUGMENTS_CATALOG[k].en = AUGMENT_EN_NAMES[k];
+});
 const ITEMS_CATALOG = {
   bluebuff: { id: 'bluebuff', name: 'Blue Buff', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_BlueBuff.png' },
   jeweled: { id: 'jeweled', name: 'Jeweled Gauntlet', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_JeweledGauntlet.png' },
@@ -132,7 +210,7 @@ const ITEMS_CATALOG = {
   ie: { id: 'ie', name: 'Infinity Edge', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_InfinityEdge.png' },
   lw: { id: 'lw', name: 'Last Whisper', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_LastWhisper.png' },
   bt: { id: 'bt', name: 'Bloodthirster', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Bloodthirster.png' },
-  titans: { id: 'titans', name: "Titan's Resolve", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_TitansResolve.png' },
+  titans: { id: 'titans', name: "Titan's ", icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Titans.png' },
   hoj: { id: 'hoj', name: 'Hand of Justice', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_UnstableConcoction.png' },
   guardbreaker: { id: 'guardbreaker', name: 'Guardbreaker', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_PowerGauntlet.png' },
   redemption: { id: 'redemption', name: 'Redemption', icon: 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Redemption.png' },
@@ -440,22 +518,35 @@ const FALLBACK_SET18_COMPS = [
 
 const AugmentBadge = ({ augId, compact = false }) => {
   const [imgErr, setImgErr] = useState(false);
+  const index = useAugmentIndex();
   const aug = AUGMENTS_CATALOG[augId] || { id: augId, name: augId, tier: 'Gold', avgPlace: 3.9, desc: 'Lõi nâng cấp.', icon: '' };
+  const iconUrl = pickAugmentIcon(aug, index);
+
+  useEffect(() => { setImgErr(false); }, [iconUrl]);
 
   const tierStyles = {
     Prismatic: 'bg-gradient-to-r from-fuchsia-950/80 via-indigo-950/80 to-cyan-950/80 border-fuchsia-400/60 text-fuchsia-200',
     Gold: 'bg-[#2a2315] border-[#c89b3c]/60 text-[#fbd38d]',
     Silver: 'bg-[#1e2328] border-slate-400/50 text-slate-200'
   };
+  const frameStyles = {
+    Prismatic: 'border-2 border-fuchsia-300 shadow-[0_0_8px_rgba(217,70,239,0.7)]',
+    Gold: 'border-2 border-[#e0b04a] shadow-[0_0_8px_rgba(224,176,74,0.55)]',
+    Silver: 'border-2 border-slate-300 shadow-[0_0_6px_rgba(203,213,225,0.45)]'
+  };
+  const frame = frameStyles[aug.tier] || frameStyles.Gold;
+  const showImg = !imgErr && iconUrl;
 
   if (compact) {
     return (
-      <div title={`${aug.name} — ${aug.desc}`} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
-        {!imgErr && aug.icon ? (
-          <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-4 h-4 rounded-[2px] object-cover shrink-0 drop-shadow-sm" />
-        ) : (
-          <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-        )}
+      <div title={`${aug.name} — ${aug.desc}`} className={`inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
+        <span className={`w-6 h-6 rounded-[4px] bg-black/60 shrink-0 flex items-center justify-center overflow-hidden ${frame}`}>
+          {showImg ? (
+            <img src={iconUrl} alt={aug.name} loading="lazy" onError={() => setImgErr(true)} className="w-full h-full object-cover" />
+          ) : (
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          )}
+        </span>
         <span className="truncate max-w-[150px] drop-shadow-sm">{aug.name}</span>
       </div>
     );
@@ -463,9 +554,9 @@ const AugmentBadge = ({ augId, compact = false }) => {
 
   return (
     <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
-      <div className="w-9 h-9 rounded-sm bg-black/50 border border-white/20 shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
-        {!imgErr && aug.icon ? (
-          <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-full h-full object-cover" />
+      <div className={`w-10 h-10 rounded-md bg-black/60 shrink-0 flex items-center justify-center overflow-hidden ${frame}`}>
+        {showImg ? (
+          <img src={iconUrl} alt={aug.name} loading="lazy" onError={() => setImgErr(true)} className="w-full h-full object-cover" />
         ) : (
           <Sparkles className="w-4 h-4 text-amber-300" />
         )}
