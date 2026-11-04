@@ -689,7 +689,7 @@ export default function MetaTFTApp() {
               className="w-8 h-8 drop-shadow-[0_2px_5px_rgba(200,155,60,0.8)]" 
               onError={(e) => e.target.src='https://raw.communitydragon.org/latest/game/assets/maps/particles/tft/item_icons/standard/spatula.png'}
             />
-            <span className="font-extrabold text-xl text-[#f0e6d2] tracking-wider drop-shadow-md">MetaTFT</span>
+           <span className="font-extrabold text-xl text-[#f0e6d2] tracking-wider drop-shadow-md">Brown's Meta Book</span>
             <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-sm bg-[#c89b3c]/15 text-[#c89b3c] border border-[#c89b3c]/40 shadow-inner tracking-wide">
               SET {currentSetNumber}: {currentSetName.toUpperCase()}
             </span>
