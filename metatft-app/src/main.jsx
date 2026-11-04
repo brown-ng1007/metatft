@@ -61,14 +61,24 @@ function useAugmentIndex() {
 function pickAugmentIcon(aug, index) {
   if (!index) return '';
   if (aug.apiName && index.byApi[aug.apiName.toLowerCase()]) return index.byApi[aug.apiName.toLowerCase()];
+
   const keys = [aug.en, aug.name].filter(Boolean).map(normAugName);
   for (const k of keys) if (index.byName[k]) return index.byName[k];
+
   if (aug.en) {
     const k = normAugName(aug.en);
     const hit = Object.keys(index.byName).find((n) => n.startsWith(k) || k.startsWith(n));
     if (hit) return index.byName[hit];
   }
-  return '';
+
+  // khớp theo apiName: bỏ "_" rồi tìm chuỗi chứa, ví dụ covencrown, vanguardcrest
+  const idKey = normAugName((aug.id || '').replace(/_\d+$/, ''));
+  const enKey = normAugName(aug.en || '');
+  const apiKey = Object.keys(index.byApi).find((a) => {
+    const n = normAugName(a);
+    return (idKey && n.includes(idKey)) || (enKey && n.includes(enKey));
+  });
+  return apiKey ? index.byApi[apiKey] : '';
 }
 
 const CHAMPIONS_HEX_ROSTER = [
