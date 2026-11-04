@@ -275,6 +275,7 @@ const AugmentBadge = ({ augId, compact = false }) => {
   if (compact) {
     return (
       <div title={`${aug.name} — ${aug.desc} (Avg Place: #${aug.avgPlace})`} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm border text-[10px] font-bold shadow-sm ${tierStyles[aug.tier] || tierStyles.Gold}`}>
+        {/* HIỂN THỊ ĐÚNG ẢNH ICON THẬT CỦA LÕI TỪ COMMUNITYDRAGON */}
         {!imgErr && aug.icon ? (
           <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-4 h-4 rounded-[2px] object-cover shrink-0 drop-shadow-sm" />
         ) : (
@@ -284,6 +285,26 @@ const AugmentBadge = ({ augId, compact = false }) => {
       </div>
     );
   }
+
+  return (
+    <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
+      <div className="w-9 h-9 rounded-sm bg-black/50 border border-white/20 shrink-0 flex items-center justify-center overflow-hidden shadow-inner">
+        {!imgErr && aug.icon ? (
+          <img src={aug.icon} alt={aug.name} onError={() => setImgErr(true)} className="w-full h-full object-cover" />
+        ) : (
+          <Sparkles className="w-4 h-4 text-amber-300" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-extrabold text-white truncate drop-shadow-sm">{aug.name}</span>
+          <span className="text-[10px] font-black text-emerald-400 shrink-0">#{aug.avgPlace} Avg</span>
+        </div>
+        <p className="text-[11px] text-gray-300/90 mt-0.5 leading-snug">{aug.desc}</p>
+      </div>
+    </div>
+  );
+};
 
   return (
     <div className={`p-2.5 rounded-md border shadow-md flex items-start gap-2.5 ${tierStyles[aug.tier] || tierStyles.Gold}`}>
