@@ -563,7 +563,7 @@ export default function MetaTFTApp() {
   // -------------------------------------------------------------
   useEffect(() => {
     // 1. Đổi tên Tab
-    document.title = "MetaTFT - Set 18";
+    document.title = "Brown's Meta Book";
 
     const spatulaUrl = "https://ddragon.leagueoflegends.com/cdn/14.24.1/img/tft-item/TFT_Item_Spatula.png";
 
@@ -577,7 +577,7 @@ export default function MetaTFTApp() {
     favicon.href = spatulaUrl;
 
     // 3. Thêm Apple Touch Icon cho iOS/Android (App Icon màn hình chính)
-    let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
+    let appleIcon = document.querySelector("link[rel='app-icon.png']");
     if (!appleIcon) {
       appleIcon = document.createElement('link');
       appleIcon.rel = 'apple-touch-icon';
